@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app/theme.dart';
 
 class StatBar extends StatelessWidget {
   final String label;
@@ -30,16 +31,13 @@ class StatBar extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTheme.statLabelStyle,
               ),
               if (showNumbers)
                 Text(
                   '$value / $maxValue',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: AppTheme.statValueStyle.copyWith(
                     color: accentColor,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
             ],
@@ -48,28 +46,22 @@ class StatBar extends StatelessWidget {
           Container(
             height: 8,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.textSecondary.withValues(alpha: 0.2),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
               widthFactor: progress,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(8),
                   gradient: LinearGradient(
                     colors: [
                       accentColor,
-                      accentColor.withValues(alpha: 0.7),
+                      accentColor.withValues(alpha: 0.8),
                     ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
+                  boxShadow: AppTheme.progressBarGlow,
                 ),
               ),
             ),

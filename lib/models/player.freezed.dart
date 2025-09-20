@@ -25,7 +25,7 @@ mixin _$Player {
   String get avatarUrl => throw _privateConstructorUsedError;
   String get village => throw _privateConstructorUsedError;
   int get ryo => throw _privateConstructorUsedError;
-  Stats get stats => throw _privateConstructorUsedError;
+  PlayerStats get stats => throw _privateConstructorUsedError;
   List<String> get jutsuIds => throw _privateConstructorUsedError;
   List<String> get itemIds => throw _privateConstructorUsedError;
   PlayerRank get rank => throw _privateConstructorUsedError;
@@ -50,12 +50,12 @@ abstract class $PlayerCopyWith<$Res> {
       String avatarUrl,
       String village,
       int ryo,
-      Stats stats,
+      PlayerStats stats,
       List<String> jutsuIds,
       List<String> itemIds,
       PlayerRank rank});
 
-  $StatsCopyWith<$Res> get stats;
+  $PlayerStatsCopyWith<$Res> get stats;
 }
 
 /// @nodoc
@@ -107,7 +107,7 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
       stats: null == stats
           ? _value.stats
           : stats // ignore: cast_nullable_to_non_nullable
-              as Stats,
+              as PlayerStats,
       jutsuIds: null == jutsuIds
           ? _value.jutsuIds
           : jutsuIds // ignore: cast_nullable_to_non_nullable
@@ -127,8 +127,8 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $StatsCopyWith<$Res> get stats {
-    return $StatsCopyWith<$Res>(_value.stats, (value) {
+  $PlayerStatsCopyWith<$Res> get stats {
+    return $PlayerStatsCopyWith<$Res>(_value.stats, (value) {
       return _then(_value.copyWith(stats: value) as $Val);
     });
   }
@@ -147,13 +147,13 @@ abstract class _$$PlayerImplCopyWith<$Res> implements $PlayerCopyWith<$Res> {
       String avatarUrl,
       String village,
       int ryo,
-      Stats stats,
+      PlayerStats stats,
       List<String> jutsuIds,
       List<String> itemIds,
       PlayerRank rank});
 
   @override
-  $StatsCopyWith<$Res> get stats;
+  $PlayerStatsCopyWith<$Res> get stats;
 }
 
 /// @nodoc
@@ -203,7 +203,7 @@ class __$$PlayerImplCopyWithImpl<$Res>
       stats: null == stats
           ? _value.stats
           : stats // ignore: cast_nullable_to_non_nullable
-              as Stats,
+              as PlayerStats,
       jutsuIds: null == jutsuIds
           ? _value._jutsuIds
           : jutsuIds // ignore: cast_nullable_to_non_nullable
@@ -250,7 +250,7 @@ class _$PlayerImpl implements _Player {
   @override
   final int ryo;
   @override
-  final Stats stats;
+  final PlayerStats stats;
   final List<String> _jutsuIds;
   @override
   @JsonKey()
@@ -332,7 +332,7 @@ abstract class _Player implements Player {
       required final String avatarUrl,
       required final String village,
       required final int ryo,
-      required final Stats stats,
+      required final PlayerStats stats,
       final List<String> jutsuIds,
       final List<String> itemIds,
       final PlayerRank rank}) = _$PlayerImpl;
@@ -350,7 +350,7 @@ abstract class _Player implements Player {
   @override
   int get ryo;
   @override
-  Stats get stats;
+  PlayerStats get stats;
   @override
   List<String> get jutsuIds;
   @override

@@ -2,19 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFF1A1A2E);
-  static const Color secondaryColor = Color(0xFF16213E);
-  static const Color accentColor = Color(0xFF0F3460);
-  static const Color surfaceColor = Color(0xFF2A2A3E);
-  static const Color cardColor = Color(0xFF3A3A4E);
+  // Background colors
+  static const Color background = Color(0xFF1B1F38);
+  static const Color cardBackground = Color(0xFF2A2F4F);
+  
+  // Text colors
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFA0AEC0);
   
   // Stat colors
-  static const Color hpColor = Color(0xFFE53E3E);
-  static const Color chakraColor = Color(0xFF3182CE);
-  static const Color staminaColor = Color(0xFF38A169);
+  static const Color attack = Color(0xFFE63946);
+  static const Color defense = Color(0xFF5E60CE);
+  static const Color chakra = Color(0xFF48CAE4);
+  static const Color stamina = Color(0xFF06D6A0);
+  
+  // Legacy color mappings for compatibility
+  static const Color primaryColor = background;
+  static const Color secondaryColor = background;
+  static const Color accentColor = chakra;
+  static const Color surfaceColor = cardBackground;
+  static const Color cardColor = cardBackground;
+  static const Color chakraColor = chakra;
+  static const Color staminaColor = stamina;
+  static const Color attackColor = attack;
+  static const Color defenseColor = defense;
+  static const Color hpColor = attack;
   static const Color ryoColor = Color(0xFFFFD700);
-  static const Color attackColor = Color(0xFFE53E3E);
-  static const Color defenseColor = Color(0xFF805AD5);
   static const Color speedColor = Color(0xFF00B5D8);
 
   static ThemeData get darkTheme {
@@ -22,92 +35,135 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: accentColor,
-        secondary: accentColor,
-        surface: surfaceColor,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.white,
+        primary: chakra,
+        secondary: chakra,
+        surface: cardBackground,
+        onPrimary: textPrimary,
+        onSecondary: textPrimary,
+        onSurface: textPrimary,
       ),
-      scaffoldBackgroundColor: primaryColor,
+      scaffoldBackgroundColor: background,
       cardTheme: CardThemeData(
-        color: cardColor,
+        color: cardBackground,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
         ),
         shadowColor: Colors.black.withValues(alpha: 0.3),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: primaryColor,
+        backgroundColor: background,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.orbitron(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 22.4, // 1.4rem
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          color: textPrimary,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: textPrimary),
       ),
-      textTheme: GoogleFonts.orbitronTextTheme(
+      textTheme: GoogleFonts.interTextTheme(
         ThemeData.dark().textTheme.copyWith(
-          headlineLarge: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+          // Headings (h1, h2, h3, .title)
+          headlineLarge: GoogleFonts.poppins(
+            fontSize: 22.4, // 1.4rem
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: textPrimary,
           ),
-          headlineMedium: const TextStyle(
-            fontSize: 20,
+          headlineMedium: GoogleFonts.poppins(
+            fontSize: 22.4, // 1.4rem
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: textPrimary,
+          ),
+          headlineSmall: GoogleFonts.poppins(
+            fontSize: 22.4, // 1.4rem
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: textPrimary,
+          ),
+          // Stat Labels
+          titleLarge: GoogleFonts.inter(
+            fontSize: 17.6, // 1.1rem
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: textPrimary,
           ),
-          bodyLarge: const TextStyle(
+          titleMedium: GoogleFonts.inter(
+            fontSize: 17.6, // 1.1rem
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+          // Stat Values
+          titleSmall: GoogleFonts.inter(
+            fontSize: 16, // 1rem
+            fontWeight: FontWeight.w600,
+            color: textSecondary,
+          ),
+          // Body text
+          bodyLarge: GoogleFonts.inter(
             fontSize: 16,
-            color: Colors.white70,
+            fontWeight: FontWeight.w400,
+            color: textPrimary,
           ),
-          bodyMedium: const TextStyle(
-            fontSize: 14,
-            color: Colors.white60,
+          bodyMedium: GoogleFonts.inter(
+            fontSize: 14.4, // 0.9rem
+            fontWeight: FontWeight.w400,
+            color: textSecondary,
+          ),
+          bodySmall: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: textSecondary,
           ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accentColor,
-          foregroundColor: Colors.white,
+          backgroundColor: chakra,
+          foregroundColor: textPrimary,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 19.2, vertical: 9.6), // 0.6rem 1.2rem
+          textStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.white,
-          side: const BorderSide(color: accentColor),
+          foregroundColor: textPrimary,
+          side: const BorderSide(color: chakra),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 19.2, vertical: 9.6), // 0.6rem 1.2rem
+          textStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: cardColor,
-        selectedItemColor: accentColor,
-        unselectedItemColor: Colors.white60,
+        backgroundColor: cardBackground,
+        selectedItemColor: chakra,
+        unselectedItemColor: textSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: surfaceColor,
-        labelStyle: const TextStyle(color: Colors.white),
+        backgroundColor: cardBackground,
+        labelStyle: const TextStyle(color: textPrimary),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: Colors.white24,
+        color: textSecondary,
         thickness: 1,
       ),
     );
@@ -118,8 +174,8 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF3A3A4E),
-      Color(0xFF2A2A3E),
+      cardBackground,
+      background,
     ],
   );
 
@@ -127,26 +183,89 @@ class AppTheme {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF1A1A2E),
-      Color(0xFF16213E),
-      Color(0xFF0F3460),
+      background,
+      cardBackground,
     ],
   );
 
-  // Box shadows
+  // Box shadows with enhanced styling
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
       color: Colors.black.withValues(alpha: 0.3),
-      blurRadius: 10,
+      blurRadius: 12,
       offset: const Offset(0, 4),
     ),
   ];
 
   static List<BoxShadow> get buttonShadow => [
     BoxShadow(
-      color: accentColor.withValues(alpha: 0.3),
+      color: chakra.withValues(alpha: 0.3),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
   ];
+
+  // Enhanced card shadow with glow effect
+  static List<BoxShadow> get cardGlowShadow => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.3),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: chakra.withValues(alpha: 0.1),
+      blurRadius: 20,
+      offset: const Offset(0, 0),
+    ),
+  ];
+
+  // Progress bar glow effect
+  static List<BoxShadow> get progressBarGlow => [
+    BoxShadow(
+      color: chakra.withValues(alpha: 0.4),
+      blurRadius: 8,
+      offset: const Offset(0, 0),
+    ),
+  ];
+
+  // Hover glow effect for interactive elements
+  static List<BoxShadow> get hoverGlow => [
+    BoxShadow(
+      color: chakra.withValues(alpha: 0.2),
+      blurRadius: 15,
+      offset: const Offset(0, 0),
+    ),
+  ];
+
+  // Custom text styles for easy access
+  static TextStyle get headingStyle => GoogleFonts.poppins(
+    fontSize: 22.4, // 1.4rem
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.5,
+    color: textPrimary,
+  );
+
+  static TextStyle get statLabelStyle => GoogleFonts.inter(
+    fontSize: 17.6, // 1.1rem
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+  );
+
+  static TextStyle get statValueStyle => GoogleFonts.inter(
+    fontSize: 16, // 1rem
+    fontWeight: FontWeight.w600,
+    color: textSecondary,
+  );
+
+  static TextStyle get descriptionStyle => GoogleFonts.inter(
+    fontSize: 14.4, // 0.9rem
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+  );
+
+  static TextStyle get buttonStyle => GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+  );
 }

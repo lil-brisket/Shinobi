@@ -20,7 +20,7 @@ class Player with _$Player {
     required String avatarUrl,
     required String village,
     required int ryo,
-    required Stats stats,
+    required PlayerStats stats,
     @Default([]) List<String> jutsuIds,
     @Default([]) List<String> itemIds,
     @Default(PlayerRank.genin) PlayerRank rank,

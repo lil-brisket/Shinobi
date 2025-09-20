@@ -6,6 +6,7 @@ import '../../widgets/section_header.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/timer.dart';
+import '../../models/stats.dart';
 
 class TrainingDojoScreen extends ConsumerStatefulWidget {
   const TrainingDojoScreen({super.key});
@@ -36,38 +37,59 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(title: 'Current Stats'),
+                // Core Stats Section
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(16),
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      StatBar(
-                        label: 'Attack',
-                        value: player.stats.attack,
-                        maxValue: 1000,
-                        accentColor: AppTheme.attackColor,
+                      Text(
+                        'Core Stats',
+                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                      StatBar(
-                        label: 'Defense',
-                        value: player.stats.defense,
-                        maxValue: 1000,
-                        accentColor: AppTheme.defenseColor,
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatDisplay('STR', player.stats.str.level, AppTheme.attackColor, 'Strength'),
+                          _buildStatDisplay('WIL', player.stats.wil.level, AppTheme.defenseColor, 'Willpower'),
+                          _buildStatDisplay('INTL', player.stats.intl.level, AppTheme.chakraColor, 'Intelligence'),
+                          _buildStatDisplay('SPD', player.stats.spd.level, AppTheme.staminaColor, 'Speed'),
+                        ],
                       ),
-                      StatBar(
-                        label: 'Chakra',
-                        value: player.stats.chakra,
-                        maxValue: player.stats.maxChakra,
-                        accentColor: AppTheme.chakraColor,
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Combat Stats Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Combat Stats',
+                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                      StatBar(
-                        label: 'Stamina',
-                        value: player.stats.stamina,
-                        maxValue: player.stats.maxStamina,
-                        accentColor: AppTheme.staminaColor,
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatDisplay('NIN', player.stats.nin.level, AppTheme.chakraColor, 'Ninjutsu'),
+                          _buildStatDisplay('GEN', player.stats.gen.level, AppTheme.defenseColor, 'Genjutsu'),
+                          _buildStatDisplay('BUK', player.stats.buk.level, AppTheme.attackColor, 'Bukijutsu'),
+                          _buildStatDisplay('TAI', player.stats.tai.level, AppTheme.staminaColor, 'Taijutsu'),
+                        ],
                       ),
                     ],
                   ),
@@ -77,38 +99,74 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                 const SizedBox(height: 16),
                 _buildTrainingCard(
                   context,
-                  'Attack Training',
-                  'Increases your attack power',
-                  Icons.sports_martial_arts,
+                  'Strength Training',
+                  'Increases your physical strength',
+                  Icons.fitness_center,
                   AppTheme.attackColor,
-                  'attack',
+                  'strength',
                 ),
                 const SizedBox(height: 12),
                 _buildTrainingCard(
                   context,
-                  'Defense Training',
-                  'Increases your defense power',
-                  Icons.shield,
-                  AppTheme.defenseColor,
-                  'defense',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Chakra Training',
-                  'Increases your chakra capacity',
-                  Icons.bolt,
+                  'Intelligence Training',
+                  'Increases your mental prowess',
+                  Icons.psychology,
                   AppTheme.chakraColor,
-                  'chakra',
+                  'intelligence',
                 ),
                 const SizedBox(height: 12),
                 _buildTrainingCard(
                   context,
-                  'Stamina Training',
-                  'Increases your stamina capacity',
+                  'Willpower Training',
+                  'Increases your mental fortitude',
+                  Icons.self_improvement,
+                  AppTheme.defenseColor,
+                  'willpower',
+                ),
+                const SizedBox(height: 12),
+                _buildTrainingCard(
+                  context,
+                  'Speed Training',
+                  'Increases your agility and reflexes',
                   Icons.directions_run,
                   AppTheme.staminaColor,
-                  'stamina',
+                  'speed',
+                ),
+                const SizedBox(height: 12),
+                _buildTrainingCard(
+                  context,
+                  'Ninjutsu Training',
+                  'Increases your ninjutsu combat power',
+                  Icons.auto_awesome,
+                  AppTheme.chakraColor,
+                  'ninjutsu',
+                ),
+                const SizedBox(height: 12),
+                _buildTrainingCard(
+                  context,
+                  'Genjutsu Training',
+                  'Increases your genjutsu combat power',
+                  Icons.visibility,
+                  AppTheme.defenseColor,
+                  'genjutsu',
+                ),
+                const SizedBox(height: 12),
+                _buildTrainingCard(
+                  context,
+                  'Bukijutsu Training',
+                  'Increases your weapon combat power',
+                  Icons.sports_martial_arts,
+                  AppTheme.attackColor,
+                  'bukijutsu',
+                ),
+                const SizedBox(height: 12),
+                _buildTrainingCard(
+                  context,
+                  'Taijutsu Training',
+                  'Increases your hand-to-hand combat power',
+                  Icons.fitness_center,
+                  AppTheme.staminaColor,
+                  'taijutsu',
                 ),
               ],
             ),
@@ -127,24 +185,33 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     String statType,
   ) {
     final timers = ref.watch(timersProvider);
+    
+    // Check if this specific training is active
     final trainingTimer = timers.where((timer) => 
         timer.type == TimerType.training && 
         timer.metadata?['statType'] == statType &&
         !timer.isCompleted
     ).firstOrNull;
     
+    // Check if ANY training is currently active
+    final anyTrainingActive = timers.any((timer) => 
+        timer.type == TimerType.training && !timer.isCompleted);
+    
     final isTraining = trainingTimer != null;
     final remaining = trainingTimer?.remainingTime ?? Duration.zero;
+    final canStartTraining = !isTraining && !anyTrainingActive;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
+        color: canStartTraining ? AppTheme.cardBackground : AppTheme.cardBackground.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
+          color: canStartTraining ? color.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
           width: 1,
         ),
+        boxShadow: canStartTraining ? AppTheme.cardShadow : [],
       ),
       child: Row(
         children: [
@@ -152,12 +219,12 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
+              color: canStartTraining ? color.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(25),
             ),
             child: Icon(
               icon,
-              color: color,
+              color: canStartTraining ? color : Colors.grey,
               size: 24,
             ),
           ),
@@ -168,72 +235,555 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                  style: AppTheme.statLabelStyle.copyWith(
+                    color: canStartTraining ? AppTheme.statLabelStyle.color : Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
+                  style: AppTheme.descriptionStyle.copyWith(
+                    color: canStartTraining ? AppTheme.descriptionStyle.color : Colors.grey.withValues(alpha: 0.7),
                   ),
                 ),
+                if (!canStartTraining && !isTraining)
+                  const SizedBox(height: 4),
+                if (!canStartTraining && !isTraining)
+                  Text(
+                    'Complete current training first',
+                    style: TextStyle(
+                      color: Colors.orange.withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(width: 16),
           if (isTraining)
-            TimerChip(
-              remaining: remaining,
-              label: title,
-              onCollect: () => _collectTraining(trainingTimer.id, statType),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TimerChip(
+                      remaining: remaining,
+                      label: title,
+                      onCollect: () => _collectTraining(trainingTimer.id, statType),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => _cancelTraining(trainingTimer.id, statType),
+                      icon: const Icon(Icons.cancel, color: Colors.red),
+                      tooltip: 'Cancel Training',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.withValues(alpha: 0.1),
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildTrainingProgress(trainingTimer),
+              ],
             )
           else
-            ElevatedButton(
-              onPressed: () => _startTraining(statType),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white,
+            AnimatedScale(
+              scale: 1.0,
+              duration: const Duration(milliseconds: 150),
+              child: ElevatedButton(
+                onPressed: canStartTraining ? () => _showTrainingDurationDialog(statType) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canStartTraining ? color : Colors.grey,
+                  foregroundColor: canStartTraining ? AppTheme.textPrimary : Colors.grey.withValues(alpha: 0.7),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: AppTheme.buttonStyle,
+                  elevation: canStartTraining ? 4 : 0,
+                ),
+                child: const Text('Start'),
               ),
-              child: const Text('Start'),
             ),
         ],
       ),
     );
   }
 
-  void _startTraining(String statType) {
-    ref.read(timersProvider.notifier).startTrainingTimer(statType, const Duration(minutes: 5));
+  void _startTraining(String statType, Duration duration) {
+    // Calculate XP based on duration
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    final totalMinutes = duration.inMinutes;
+    int xp = (totalMinutes / 30 * 100).round(); // 100 XP per 30 minutes
+    
+    ref.read(timersProvider.notifier).startTrainingTimer(statType, duration, xp);
+
+    String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Started $statType training!'),
+        content: Text('Started $statType training for $durationText! Only one training session allowed at a time.'),
         backgroundColor: AppTheme.accentColor,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _cancelTraining(String timerId, String statType) {
+    final timers = ref.read(timersProvider);
+    final timer = timers.firstWhere((t) => t.id == timerId);
+    
+    // Calculate completion percentage and potential gains
+    final elapsed = DateTime.now().difference(timer.startTime);
+    final totalDuration = timer.duration;
+    final completionPercentage = (elapsed.inSeconds / totalDuration.inSeconds * 100).clamp(0, 100);
+    
+    int partialXp = 0;
+    String gainMessage = 'You will lose all progress.';
+    
+    if (completionPercentage >= 75) {
+      partialXp = (timer.metadata?['xp'] ?? 200) * 0.75;
+      gainMessage = 'You will gain ${partialXp.round()} XP (75% of full training).';
+    } else if (completionPercentage >= 50) {
+      partialXp = (timer.metadata?['xp'] ?? 200) * 0.5;
+      gainMessage = 'You will gain ${partialXp.round()} XP (50% of full training).';
+    } else if (completionPercentage >= 25) {
+      partialXp = (timer.metadata?['xp'] ?? 200) * 0.25;
+      gainMessage = 'You will gain ${partialXp.round()} XP (25% of full training).';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: const Text(
+          'Cancel Training',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to cancel your $statType training?',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: partialXp > 0 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: partialXp > 0 ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    partialXp > 0 ? Icons.check_circle : Icons.warning,
+                    color: partialXp > 0 ? Colors.green : Colors.orange,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      gainMessage,
+                      style: TextStyle(
+                        color: partialXp > 0 ? Colors.green : Colors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Training Progress: ${completionPercentage.toStringAsFixed(1)}%',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Keep Training',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _processCancelledTraining(timer, statType, partialXp);
+            },
+            child: Text(
+              'Cancel Training',
+              style: TextStyle(
+                color: partialXp > 0 ? Colors.orange : Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _processCancelledTraining(GameTimer timer, String statType, int partialXp) {
+    // Remove the timer
+    ref.read(timersProvider.notifier).removeTimer(timer.id);
+    
+    if (partialXp > 0) {
+      // Apply partial XP gains
+      final player = ref.read(playerProvider);
+      PlayerStats newStats = player.stats;
+      
+      // Apply partial training XP based on stat type
+      switch (statType) {
+        case 'strength':
+          newStats = newStats.applyTrainingXP(newStats.str, partialXp);
+          break;
+        case 'intelligence':
+          newStats = newStats.applyTrainingXP(newStats.intl, partialXp);
+          break;
+        case 'willpower':
+          newStats = newStats.applyTrainingXP(newStats.wil, partialXp);
+          break;
+        case 'speed':
+          newStats = newStats.applyTrainingXP(newStats.spd, partialXp);
+          break;
+        case 'ninjutsu':
+          newStats = newStats.applyTrainingXP(newStats.nin, partialXp);
+          break;
+        case 'genjutsu':
+          newStats = newStats.applyTrainingXP(newStats.gen, partialXp);
+          break;
+        case 'bukijutsu':
+          newStats = newStats.applyTrainingXP(newStats.buk, partialXp);
+          break;
+        case 'taijutsu':
+          newStats = newStats.applyTrainingXP(newStats.tai, partialXp);
+          break;
+      }
+      
+      ref.read(playerProvider.notifier).updateStats(newStats);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$statType training cancelled. You gained ${partialXp.round()} XP!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$statType training cancelled. No XP gained (less than 25% complete).'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Widget _buildTrainingProgress(GameTimer timer) {
+    final elapsed = DateTime.now().difference(timer.startTime);
+    final totalDuration = timer.duration;
+    final completionPercentage = (elapsed.inSeconds / totalDuration.inSeconds * 100).clamp(0, 100);
+    
+    // Determine progress color based on thresholds
+    Color progressColor = Colors.grey;
+    if (completionPercentage >= 75) {
+      progressColor = Colors.green;
+    } else if (completionPercentage >= 50) {
+      progressColor = Colors.blue;
+    } else if (completionPercentage >= 25) {
+      progressColor = Colors.orange;
+    }
+    
+    return Container(
+      width: 200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Progress',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                '${completionPercentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: progressColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: completionPercentage / 100,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: progressColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _getProgressMessage(completionPercentage),
+            style: TextStyle(
+              color: progressColor.withValues(alpha: 0.8),
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getProgressMessage(double percentage) {
+    if (percentage >= 75) {
+      return '75% threshold reached - Cancel for 75% XP';
+    } else if (percentage >= 50) {
+      return '50% threshold reached - Cancel for 50% XP';
+    } else if (percentage >= 25) {
+      return '25% threshold reached - Cancel for 25% XP';
+    } else {
+      return 'No XP if cancelled yet';
+    }
+  }
+
+  void _showTrainingDurationDialog(String statType) {
+    final durations = [
+      {'label': '30 minutes', 'duration': const Duration(minutes: 30), 'xp': 100},
+      {'label': '1 hour', 'duration': const Duration(hours: 1), 'xp': 200},
+      {'label': '2 hours', 'duration': const Duration(hours: 2), 'xp': 400},
+      {'label': '4 hours', 'duration': const Duration(hours: 4), 'xp': 800},
+      {'label': '8 hours', 'duration': const Duration(hours: 8), 'xp': 1600},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: Text(
+          'Choose Training Duration',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: durations.map((duration) => ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.timer,
+                  color: AppTheme.accentColor,
+                  size: 20,
+                ),
+              ),
+              title: Text(
+                duration['label'] as String,
+                style: const TextStyle(color: Colors.white),
+              ),
+              subtitle: Text(
+                'Gain ${duration['xp']} XP',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _startTraining(statType, duration['duration'] as Duration);
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              tileColor: Colors.white.withValues(alpha: 0.05),
+            )).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   void _collectTraining(String timerId, String statType) {
+    final timers = ref.read(timersProvider);
+    final timer = timers.firstWhere((t) => t.id == timerId);
+    
     ref.read(timersProvider.notifier).completeTimer(timerId);
 
-    // Update player stats (mock)
+    // Update player stats using the new training system
     final player = ref.read(playerProvider);
-    final newPlayer = player.copyWith(
-      stats: player.stats.copyWith(
-        attack: statType == 'attack' ? player.stats.attack + 10 : player.stats.attack,
-        defense: statType == 'defense' ? player.stats.defense + 10 : player.stats.defense,
-        maxChakra: statType == 'chakra' ? player.stats.maxChakra + 20 : player.stats.maxChakra,
-        maxStamina: statType == 'stamina' ? player.stats.maxStamina + 20 : player.stats.maxStamina,
-      ),
-    );
-    ref.read(playerProvider.notifier).state = newPlayer;
+    PlayerStats newStats = player.stats;
+    
+    // Calculate XP based on training duration (stored in metadata)
+    int baseXp = timer.metadata?['xp'] ?? 200; // Default fallback
+    
+    // Debug: Print current stats before training
+    print('Before training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
+    print('Base stats - STR: ${newStats.str.level}, WIL: ${newStats.wil.level}, INTL: ${newStats.intl.level}, SPD: ${newStats.spd.level}');
+    print('Training XP: $baseXp');
+    
+    // Apply training XP based on stat type
+    switch (statType) {
+      case 'strength':
+        newStats = newStats.applyTrainingXP(newStats.str, baseXp);
+        break;
+      case 'intelligence':
+        newStats = newStats.applyTrainingXP(newStats.intl, baseXp);
+        break;
+      case 'willpower':
+        newStats = newStats.applyTrainingXP(newStats.wil, baseXp);
+        break;
+      case 'speed':
+        newStats = newStats.applyTrainingXP(newStats.spd, baseXp);
+        break;
+      case 'ninjutsu':
+        newStats = newStats.applyTrainingXP(newStats.nin, baseXp);
+        break;
+      case 'genjutsu':
+        newStats = newStats.applyTrainingXP(newStats.gen, baseXp);
+        break;
+      case 'bukijutsu':
+        newStats = newStats.applyTrainingXP(newStats.buk, baseXp);
+        break;
+      case 'taijutsu':
+        newStats = newStats.applyTrainingXP(newStats.tai, baseXp);
+        break;
+    }
+    
+    // Debug: Print stats after training
+    print('After training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
+    print('Base stats - STR: ${newStats.str.level}, WIL: ${newStats.wil.level}, INTL: ${newStats.intl.level}, SPD: ${newStats.spd.level}');
+    
+    ref.read(playerProvider.notifier).updateStats(newStats);
+
+    // Force a rebuild by updating the state
+    setState(() {});
+
+    // Show specific message based on training type
+    String message = 'Training completed! ';
+    switch (statType) {
+      case 'strength':
+        message += 'Strength increased to ${newStats.str.level}!';
+        break;
+      case 'intelligence':
+        message += 'Intelligence increased to ${newStats.intl.level}!';
+        break;
+      case 'willpower':
+        message += 'Willpower increased to ${newStats.wil.level}!';
+        break;
+      case 'speed':
+        message += 'Speed increased to ${newStats.spd.level}!';
+        break;
+      case 'ninjutsu':
+        message += 'Ninjutsu increased to ${newStats.nin.level}!';
+        break;
+      case 'genjutsu':
+        message += 'Genjutsu increased to ${newStats.gen.level}!';
+        break;
+      case 'bukijutsu':
+        message += 'Bukijutsu increased to ${newStats.buk.level}!';
+        break;
+      case 'taijutsu':
+        message += 'Taijutsu increased to ${newStats.tai.level}!';
+        break;
+      default:
+        message += '$statType increased!';
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Training completed! $statType increased!'),
+        content: Text(message),
         backgroundColor: AppTheme.staminaColor,
+        duration: const Duration(seconds: 3),
       ),
+    );
+  }
+
+  Widget _buildStatDisplay(String label, int value, Color color, String fullName) {
+    return Column(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: color.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              value.toString(),
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          fullName,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.8),
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

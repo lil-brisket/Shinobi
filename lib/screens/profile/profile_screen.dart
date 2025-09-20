@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../controllers/auth_provider.dart';
 import '../../constants/villages.dart';
+import '../../models/stats.dart';
 import '../../models/village.dart';
 import '../../models/player.dart';
 
@@ -24,6 +25,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final player = ref.watch(playerProvider);
     final settings = ref.watch(settingsProvider);
     final authState = ref.watch(authProvider);
+    
+    // Debug: Print when profile rebuilds
+    print('Profile rebuild - STR: ${player.stats.str.level}, INTL: ${player.stats.intl.level}, WIL: ${player.stats.wil.level}, SPD: ${player.stats.spd.level}');
 
     return Scaffold(
       appBar: AppBar(
@@ -133,9 +137,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 const SizedBox(height: 24),
 
-                // Stats Section
+                // Health Resources Section
                 const Text(
-                  'Stats',
+                  'Health & Resources',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -153,88 +157,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
                       StatBar(
                         label: 'HP',
-                        value: player.stats.hp,
+                        value: player.stats.maxHp, // Always show as full
                         maxValue: player.stats.maxHp,
                         accentColor: AppTheme.hpColor,
                       ),
                       StatBar(
                         label: 'Chakra',
-                        value: player.stats.chakra,
+                        value: player.stats.maxChakra, // Always show as full
                         maxValue: player.stats.maxChakra,
                         accentColor: AppTheme.chakraColor,
                       ),
                       StatBar(
                         label: 'Stamina',
-                        value: player.stats.stamina,
+                        value: player.stats.maxStamina, // Always show as full
                         maxValue: player.stats.maxStamina,
                         accentColor: AppTheme.staminaColor,
                       ),
-                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Core Stats Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Core Stats',
+                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Attack',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${player.stats.attack}',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: AppTheme.attackColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Defense',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${player.stats.defense}',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: AppTheme.defenseColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Speed',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${player.stats.speed}',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: AppTheme.speedColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          _buildStatDisplay('STR', player.stats.str.level, AppTheme.attackColor, 'Strength'),
+                          _buildStatDisplay('WIL', player.stats.wil.level, AppTheme.defenseColor, 'Willpower'),
+                          _buildStatDisplay('INTL', player.stats.intl.level, AppTheme.chakraColor, 'Intelligence'),
+                          _buildStatDisplay('SPD', player.stats.spd.level, AppTheme.staminaColor, 'Speed'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Combat Stats Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Combat Stats',
+                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatDisplay('NIN', player.stats.nin.level, AppTheme.chakraColor, 'Ninjutsu'),
+                          _buildStatDisplay('GEN', player.stats.gen.level, AppTheme.defenseColor, 'Genjutsu'),
+                          _buildStatDisplay('BUK', player.stats.buk.level, AppTheme.attackColor, 'Bukijutsu'),
+                          _buildStatDisplay('TAI', player.stats.tai.level, AppTheme.staminaColor, 'Taijutsu'),
                         ],
                       ),
                     ],
@@ -375,6 +370,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatDisplay(String label, int value, Color color, String fullName) {
+    return Column(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: color.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              value.toString(),
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          fullName,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.8),
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 

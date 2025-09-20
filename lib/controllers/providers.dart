@@ -12,29 +12,47 @@ import '../models/timer.dart';
 import '../constants/villages.dart';
 
 // Player Provider
-final playerProvider = StateProvider<Player>((ref) {
-  return Player(
+final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
+  return PlayerNotifier();
+});
+
+class PlayerNotifier extends StateNotifier<Player> {
+  PlayerNotifier() : super(Player(
     id: 'player_001',
     name: 'Naruto_Uzumaki',
     avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=N',
     village: 'Hidden Leaf',
     ryo: 15000,
-    stats: const Stats(
-      hp: 850,
-      maxHp: 1000,
-      chakra: 920,
-      maxChakra: 1200,
-      stamina: 780,
-      maxStamina: 900,
-      attack: 450,
-      defense: 380,
-      speed: 520,
+    stats: const PlayerStats(
+      level: 25,
+      str: TrainableStat(level: 20, xp: 150),
+      intl: TrainableStat(level: 22, xp: 200),
+      spd: TrainableStat(level: 24, xp: 75),
+      wil: TrainableStat(level: 18, xp: 300),
+      nin: TrainableStat(level: 26, xp: 100),
+      gen: TrainableStat(level: 16, xp: 50),
+      buk: TrainableStat(level: 21, xp: 180),
+      tai: TrainableStat(level: 23, xp: 250),
+      // Set current values to be reasonable percentages of max
+      currentHP: 600,
+      currentSP: 500,
+      currentCP: 550,
     ),
     jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
     itemIds: ['kunai', 'shuriken', 'health_potion'],
     rank: PlayerRank.chunin, // Set to chunin to test village change functionality
-  );
-});
+  ));
+
+  void updateStats(PlayerStats newStats) {
+    print('PlayerNotifier: Updating stats - STR: ${newStats.str.level}, INTL: ${newStats.intl.level}, WIL: ${newStats.wil.level}, SPD: ${newStats.spd.level}');
+    state = state.copyWith(stats: newStats);
+    print('PlayerNotifier: State updated successfully');
+  }
+
+  void updatePlayer(Player newPlayer) {
+    state = newPlayer;
+  }
+}
 
 // Inventory Provider
 final inventoryProvider = StateProvider<List<Item>>((ref) {
@@ -332,14 +350,14 @@ class TimersNotifier extends StateNotifier<List<GameTimer>> {
   }
 
   // Helper method to start a training timer
-  void startTrainingTimer(String statType, Duration duration) {
+  void startTrainingTimer(String statType, Duration duration, int xp) {
     final timer = GameTimer(
       id: 'training_${statType}_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Training $statType',
       type: TimerType.training,
       startTime: DateTime.now(),
       duration: duration,
-      metadata: {'statType': statType},
+      metadata: {'statType': statType, 'xp': xp},
     );
     addTimer(timer);
   }

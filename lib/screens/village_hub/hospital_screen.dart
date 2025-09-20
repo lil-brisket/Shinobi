@@ -5,6 +5,7 @@ import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/item.dart';
+import '../../models/stats.dart';
 
 class HospitalScreen extends ConsumerWidget {
   const HospitalScreen({super.key});
@@ -138,14 +139,7 @@ class HospitalScreen extends ConsumerWidget {
 
   void _rest(BuildContext context, WidgetRef ref) {
     final player = ref.read(playerProvider);
-    final newPlayer = player.copyWith(
-      stats: player.stats.copyWith(
-        hp: player.stats.maxHp,
-        chakra: player.stats.maxChakra,
-        stamina: player.stats.maxStamina,
-      ),
-    );
-    ref.read(playerProvider.notifier).state = newPlayer;
+    ref.read(playerProvider.notifier).updateStats(player.stats.restoreAll());
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -250,23 +244,20 @@ class HospitalScreen extends ConsumerWidget {
       );
       ref.read(inventoryProvider.notifier).state = updatedInventory;
 
-      // Apply healing effects
-      int newHp = player.stats.hp;
-      int newChakra = player.stats.chakra;
+      // Apply healing effects using the new stat system
+      PlayerStats newStats = player.stats;
       
       if (item.effect.containsKey('heal')) {
-        newHp = (player.stats.hp + (item.effect['heal'] as int)).clamp(0, player.stats.maxHp);
+        newStats = newStats.healHP(item.effect['heal'] as int);
       }
       if (item.effect.containsKey('chakra')) {
-        newChakra = (player.stats.chakra + (item.effect['chakra'] as int)).clamp(0, player.stats.maxChakra);
+        newStats = newStats.restoreCP(item.effect['chakra'] as int);
+      }
+      if (item.effect.containsKey('stamina')) {
+        newStats = newStats.restoreSP(item.effect['stamina'] as int);
       }
 
-      final newPlayer = player.copyWith(
-        stats: player.stats.copyWith(
-          hp: newHp,
-          chakra: newChakra,
-        ),
-      );
+      final newPlayer = player.copyWith(stats: newStats);
       ref.read(playerProvider.notifier).state = newPlayer;
 
       Navigator.pop(context);

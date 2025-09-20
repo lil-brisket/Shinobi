@@ -12,7 +12,7 @@ _$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
       avatarUrl: json['avatarUrl'] as String,
       village: json['village'] as String,
       ryo: (json['ryo'] as num).toInt(),
-      stats: Stats.fromJson(json['stats'] as Map<String, dynamic>),
+      stats: PlayerStats.fromJson(json['stats'] as Map<String, dynamic>),
       jutsuIds: (json['jutsuIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??

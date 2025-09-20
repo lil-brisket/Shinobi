@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/item.dart';
+import '../../models/stats.dart';
 
 class ItemsScreen extends ConsumerWidget {
   const ItemsScreen({super.key});
@@ -211,28 +212,20 @@ class ItemsScreen extends ConsumerWidget {
       );
       ref.read(inventoryProvider.notifier).state = updatedInventory;
 
-      // Apply item effects
-      int newHp = player.stats.hp;
-      int newChakra = player.stats.chakra;
-      int newStamina = player.stats.stamina;
+      // Apply item effects using the new stat system
+      PlayerStats newStats = player.stats;
       
       if (item.effect.containsKey('heal')) {
-        newHp = (player.stats.hp + (item.effect['heal'] as int)).clamp(0, player.stats.maxHp);
+        newStats = newStats.healHP(item.effect['heal'] as int);
       }
       if (item.effect.containsKey('chakra')) {
-        newChakra = (player.stats.chakra + (item.effect['chakra'] as int)).clamp(0, player.stats.maxChakra);
+        newStats = newStats.restoreCP(item.effect['chakra'] as int);
       }
       if (item.effect.containsKey('stamina')) {
-        newStamina = (player.stats.stamina + (item.effect['stamina'] as int)).clamp(0, player.stats.maxStamina);
+        newStats = newStats.restoreSP(item.effect['stamina'] as int);
       }
 
-      final newPlayer = player.copyWith(
-        stats: player.stats.copyWith(
-          hp: newHp,
-          chakra: newChakra,
-          stamina: newStamina,
-        ),
-      );
+      final newPlayer = player.copyWith(stats: newStats);
       ref.read(playerProvider.notifier).state = newPlayer;
 
       ScaffoldMessenger.of(context).showSnackBar(
