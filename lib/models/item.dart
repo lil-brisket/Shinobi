@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'equipment.dart';
 
 part 'item.freezed.dart';
 part 'item.g.dart';
@@ -17,7 +18,7 @@ enum ItemRarity {
 }
 
 @freezed
-class Item with _$Item {
+class Item with _$Item implements EquippableItem {
   const factory Item({
     required String id,
     required String name,
@@ -26,7 +27,14 @@ class Item with _$Item {
     required int quantity,
     required ItemRarity rarity,
     @Default({}) Map<String, dynamic> effect,
+    @Default(ItemKind.consumable) ItemKind kind,
+    EquippableMeta? equip,
+    @Default(ItemSize.normal) ItemSize size,
   }) = _Item;
 
   factory Item.fromJson(Map<String, dynamic> json) => _$ItemFromJson(json);
+}
+
+extension ItemEquippable on Item {
+  bool get isEquippable => kind == ItemKind.equipment && equip != null;
 }

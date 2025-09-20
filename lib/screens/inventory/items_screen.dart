@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
+import '../../controllers/equipment_provider.dart';
 import '../../models/item.dart';
+import '../../models/equipment.dart';
 import '../../models/stats.dart';
 
 class ItemsScreen extends ConsumerWidget {
@@ -167,6 +169,30 @@ class ItemsScreen extends ConsumerWidget {
                 child: const Text('Use'),
               ),
               const SizedBox(height: 8),
+              if (item.isEquippable) ...[
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // If the item only fits one slot, equip directly; otherwise show a picker
+                    final meta = item.equip!;
+                    if (meta.allowedSlots.length == 1) {
+                      ref.read(equipmentProvider.notifier).equip(item, preferredSlot: meta.allowedSlots.first);
+                    } else {
+                      _chooseSlotAndEquip(context, ref, item);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Equipped ${item.name}')),
+                    );
+                  },
+                  icon: const Icon(Icons.checkroom),
+                  label: const Text('Equip'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               OutlinedButton(
                 onPressed: () => _showItemDetails(context, item),
                 style: OutlinedButton.styleFrom(
@@ -226,7 +252,7 @@ class ItemsScreen extends ConsumerWidget {
       }
 
       final newPlayer = player.copyWith(stats: newStats);
-      ref.read(playerProvider.notifier).state = newPlayer;
+      ref.read(playerProvider.notifier).updatePlayer(newPlayer);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -390,5 +416,31 @@ class ItemsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _chooseSlotAndEquip(BuildContext context, WidgetRef ref, Item item) async {
+    final chosen = await showModalBottomSheet<SlotType>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            const Text('Choose slot'),
+            const SizedBox(height: 8),
+            ...item.equip!.allowedSlots.map((s) => ListTile(
+              leading: const Icon(Icons.checkroom),
+              title: Text(s.name),
+              onTap: () => Navigator.pop(context, s),
+            )),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null) {
+      ref.read(equipmentProvider.notifier).equip(item, preferredSlot: chosen);
+    }
   }
 }

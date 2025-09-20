@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/equipment_panel.dart';
 import '../../app/theme.dart';
 import 'items_screen.dart';
 import 'jutsus_screen.dart';
@@ -10,7 +11,7 @@ class InventoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Inventory'),
@@ -38,14 +39,16 @@ class InventoryScreen extends StatelessWidget {
                     tabs: [
                       Tab(text: 'Items'),
                       Tab(text: 'Jutsus'),
+                      Tab(text: 'Equipment'),
                     ],
                   ),
                 ),
                 Expanded(
                   child: TabBarView(
-                    children: [
-                      const ItemsScreen(),
-                      const JutsusScreen(),
+                    children: const [
+                      ItemsScreen(),
+                      JutsusScreen(),
+                      EquipmentPanel(),
                     ],
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player.dart';
 import '../models/stats.dart';
 import '../models/item.dart';
+import '../models/equipment.dart';
 import '../models/jutsu.dart';
 import '../models/mission.dart';
 import '../models/clan.dart';
@@ -65,6 +66,8 @@ final inventoryProvider = StateProvider<List<Item>>((ref) {
       quantity: 15,
       rarity: ItemRarity.common,
       effect: {'damage': 25},
+      kind: ItemKind.material,
+      size: ItemSize.small,
     ),
     const Item(
       id: 'shuriken',
@@ -74,6 +77,8 @@ final inventoryProvider = StateProvider<List<Item>>((ref) {
       quantity: 8,
       rarity: ItemRarity.common,
       effect: {'damage': 20},
+      kind: ItemKind.material,
+      size: ItemSize.small,
     ),
     const Item(
       id: 'health_potion',
@@ -101,6 +106,92 @@ final inventoryProvider = StateProvider<List<Item>>((ref) {
       quantity: 1,
       rarity: ItemRarity.epic,
       effect: {'xp': 500},
+    ),
+    // Equipment items
+    const Item(
+      id: 'headband_focus',
+      name: 'Headband of Focus',
+      description: '+10 INT, +25 CP',
+      icon: '🎯',
+      quantity: 1,
+      rarity: ItemRarity.rare,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.head},
+        bonuses: EquipmentStats(intel: 10, cp: 25),
+      ),
+    ),
+    const Item(
+      id: 'shinobi_sandals',
+      name: 'Shinobi Sandals',
+      description: '+5 SPD',
+      icon: '👟',
+      quantity: 1,
+      rarity: ItemRarity.uncommon,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.feet},
+        bonuses: EquipmentStats(spd: 5),
+      ),
+    ),
+    const Item(
+      id: 'katana_2h',
+      name: 'Great Katana',
+      description: 'Two‑handed. +12 BUKI, +4 SPD',
+      icon: '⚔️',
+      quantity: 1,
+      rarity: ItemRarity.epic,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.armLeft, SlotType.armRight},
+        twoHanded: true,
+        bonuses: EquipmentStats(buki: 12, spd: 4),
+      ),
+    ),
+    const Item(
+      id: 'utility_belt',
+      name: 'Utility Belt',
+      description: 'Carry up to 8 small tools at the waist',
+      icon: '🪢',
+      quantity: 1,
+      rarity: ItemRarity.rare,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.waist},
+        waistCapacity: 8,
+      ),
+    ),
+    const Item(
+      id: 'ninja_vest',
+      name: 'Ninja Vest',
+      description: '+8 WIL, +3 HP',
+      icon: '🦺',
+      quantity: 1,
+      rarity: ItemRarity.uncommon,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.body},
+        bonuses: EquipmentStats(wil: 8, hp: 3),
+      ),
+    ),
+    const Item(
+      id: 'steel_gauntlets',
+      name: 'Steel Gauntlets',
+      description: '+6 STR, +2 TAI',
+      icon: '🥊',
+      quantity: 1,
+      rarity: ItemRarity.rare,
+      effect: {},
+      kind: ItemKind.equipment,
+      equip: EquippableMeta(
+        allowedSlots: {SlotType.armLeft, SlotType.armRight},
+        bonuses: EquipmentStats(str: 6, tai: 2),
+      ),
     ),
   ];
 });
@@ -350,14 +441,14 @@ class TimersNotifier extends StateNotifier<List<GameTimer>> {
   }
 
   // Helper method to start a training timer
-  void startTrainingTimer(String statType, Duration duration, int xp) {
+  void startTrainingTimer(String statType, Duration duration, int statIncrease) {
     final timer = GameTimer(
       id: 'training_${statType}_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Training $statType',
       type: TimerType.training,
       startTime: DateTime.now(),
       duration: duration,
-      metadata: {'statType': statType, 'xp': xp},
+      metadata: {'statType': statType, 'statIncrease': statIncrease},
     );
     addTimer(timer);
   }

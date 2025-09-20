@@ -27,6 +27,9 @@ mixin _$Item {
   int get quantity => throw _privateConstructorUsedError;
   ItemRarity get rarity => throw _privateConstructorUsedError;
   Map<String, dynamic> get effect => throw _privateConstructorUsedError;
+  ItemKind get kind => throw _privateConstructorUsedError;
+  EquippableMeta? get equip => throw _privateConstructorUsedError;
+  ItemSize get size => throw _privateConstructorUsedError;
 
   /// Serializes this Item to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -49,7 +52,12 @@ abstract class $ItemCopyWith<$Res> {
       String icon,
       int quantity,
       ItemRarity rarity,
-      Map<String, dynamic> effect});
+      Map<String, dynamic> effect,
+      ItemKind kind,
+      EquippableMeta? equip,
+      ItemSize size});
+
+  $EquippableMetaCopyWith<$Res>? get equip;
 }
 
 /// @nodoc
@@ -74,6 +82,9 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
     Object? quantity = null,
     Object? rarity = null,
     Object? effect = null,
+    Object? kind = null,
+    Object? equip = freezed,
+    Object? size = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -104,7 +115,33 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
           ? _value.effect
           : effect // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
+      kind: null == kind
+          ? _value.kind
+          : kind // ignore: cast_nullable_to_non_nullable
+              as ItemKind,
+      equip: freezed == equip
+          ? _value.equip
+          : equip // ignore: cast_nullable_to_non_nullable
+              as EquippableMeta?,
+      size: null == size
+          ? _value.size
+          : size // ignore: cast_nullable_to_non_nullable
+              as ItemSize,
     ) as $Val);
+  }
+
+  /// Create a copy of Item
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $EquippableMetaCopyWith<$Res>? get equip {
+    if (_value.equip == null) {
+      return null;
+    }
+
+    return $EquippableMetaCopyWith<$Res>(_value.equip!, (value) {
+      return _then(_value.copyWith(equip: value) as $Val);
+    });
   }
 }
 
@@ -122,7 +159,13 @@ abstract class _$$ItemImplCopyWith<$Res> implements $ItemCopyWith<$Res> {
       String icon,
       int quantity,
       ItemRarity rarity,
-      Map<String, dynamic> effect});
+      Map<String, dynamic> effect,
+      ItemKind kind,
+      EquippableMeta? equip,
+      ItemSize size});
+
+  @override
+  $EquippableMetaCopyWith<$Res>? get equip;
 }
 
 /// @nodoc
@@ -144,6 +187,9 @@ class __$$ItemImplCopyWithImpl<$Res>
     Object? quantity = null,
     Object? rarity = null,
     Object? effect = null,
+    Object? kind = null,
+    Object? equip = freezed,
+    Object? size = null,
   }) {
     return _then(_$ItemImpl(
       id: null == id
@@ -174,6 +220,18 @@ class __$$ItemImplCopyWithImpl<$Res>
           ? _value._effect
           : effect // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>,
+      kind: null == kind
+          ? _value.kind
+          : kind // ignore: cast_nullable_to_non_nullable
+              as ItemKind,
+      equip: freezed == equip
+          ? _value.equip
+          : equip // ignore: cast_nullable_to_non_nullable
+              as EquippableMeta?,
+      size: null == size
+          ? _value.size
+          : size // ignore: cast_nullable_to_non_nullable
+              as ItemSize,
     ));
   }
 }
@@ -188,7 +246,10 @@ class _$ItemImpl implements _Item {
       required this.icon,
       required this.quantity,
       required this.rarity,
-      final Map<String, dynamic> effect = const {}})
+      final Map<String, dynamic> effect = const {},
+      this.kind = ItemKind.consumable,
+      this.equip,
+      this.size = ItemSize.normal})
       : _effect = effect;
 
   factory _$ItemImpl.fromJson(Map<String, dynamic> json) =>
@@ -216,8 +277,17 @@ class _$ItemImpl implements _Item {
   }
 
   @override
+  @JsonKey()
+  final ItemKind kind;
+  @override
+  final EquippableMeta? equip;
+  @override
+  @JsonKey()
+  final ItemSize size;
+
+  @override
   String toString() {
-    return 'Item(id: $id, name: $name, description: $description, icon: $icon, quantity: $quantity, rarity: $rarity, effect: $effect)';
+    return 'Item(id: $id, name: $name, description: $description, icon: $icon, quantity: $quantity, rarity: $rarity, effect: $effect, kind: $kind, equip: $equip, size: $size)';
   }
 
   @override
@@ -233,13 +303,26 @@ class _$ItemImpl implements _Item {
             (identical(other.quantity, quantity) ||
                 other.quantity == quantity) &&
             (identical(other.rarity, rarity) || other.rarity == rarity) &&
-            const DeepCollectionEquality().equals(other._effect, _effect));
+            const DeepCollectionEquality().equals(other._effect, _effect) &&
+            (identical(other.kind, kind) || other.kind == kind) &&
+            (identical(other.equip, equip) || other.equip == equip) &&
+            (identical(other.size, size) || other.size == size));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, description, icon,
-      quantity, rarity, const DeepCollectionEquality().hash(_effect));
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      description,
+      icon,
+      quantity,
+      rarity,
+      const DeepCollectionEquality().hash(_effect),
+      kind,
+      equip,
+      size);
 
   /// Create a copy of Item
   /// with the given fields replaced by the non-null parameter values.
@@ -265,7 +348,10 @@ abstract class _Item implements Item {
       required final String icon,
       required final int quantity,
       required final ItemRarity rarity,
-      final Map<String, dynamic> effect}) = _$ItemImpl;
+      final Map<String, dynamic> effect,
+      final ItemKind kind,
+      final EquippableMeta? equip,
+      final ItemSize size}) = _$ItemImpl;
 
   factory _Item.fromJson(Map<String, dynamic> json) = _$ItemImpl.fromJson;
 
@@ -283,6 +369,12 @@ abstract class _Item implements Item {
   ItemRarity get rarity;
   @override
   Map<String, dynamic> get effect;
+  @override
+  ItemKind get kind;
+  @override
+  EquippableMeta? get equip;
+  @override
+  ItemSize get size;
 
   /// Create a copy of Item
   /// with the given fields replaced by the non-null parameter values.

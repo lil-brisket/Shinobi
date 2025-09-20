@@ -14,6 +14,13 @@ _$ItemImpl _$$ItemImplFromJson(Map<String, dynamic> json) => _$ItemImpl(
       quantity: (json['quantity'] as num).toInt(),
       rarity: $enumDecode(_$ItemRarityEnumMap, json['rarity']),
       effect: json['effect'] as Map<String, dynamic>? ?? const {},
+      kind: $enumDecodeNullable(_$ItemKindEnumMap, json['kind']) ??
+          ItemKind.consumable,
+      equip: json['equip'] == null
+          ? null
+          : EquippableMeta.fromJson(json['equip'] as Map<String, dynamic>),
+      size: $enumDecodeNullable(_$ItemSizeEnumMap, json['size']) ??
+          ItemSize.normal,
     );
 
 Map<String, dynamic> _$$ItemImplToJson(_$ItemImpl instance) =>
@@ -25,6 +32,9 @@ Map<String, dynamic> _$$ItemImplToJson(_$ItemImpl instance) =>
       'quantity': instance.quantity,
       'rarity': _$ItemRarityEnumMap[instance.rarity]!,
       'effect': instance.effect,
+      'kind': _$ItemKindEnumMap[instance.kind]!,
+      'equip': instance.equip,
+      'size': _$ItemSizeEnumMap[instance.size]!,
     };
 
 const _$ItemRarityEnumMap = {
@@ -33,4 +43,18 @@ const _$ItemRarityEnumMap = {
   ItemRarity.rare: 'rare',
   ItemRarity.epic: 'epic',
   ItemRarity.legendary: 'legendary',
+};
+
+const _$ItemKindEnumMap = {
+  ItemKind.consumable: 'consumable',
+  ItemKind.equipment: 'equipment',
+  ItemKind.material: 'material',
+  ItemKind.jutsu: 'jutsu',
+  ItemKind.quest: 'quest',
+};
+
+const _$ItemSizeEnumMap = {
+  ItemSize.small: 'small',
+  ItemSize.normal: 'normal',
+  ItemSize.large: 'large',
 };

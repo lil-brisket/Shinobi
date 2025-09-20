@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../widgets/stat_bar.dart';
 import '../../widgets/timer_chip.dart';
 import '../../widgets/section_header.dart';
 import '../../app/theme.dart';
@@ -313,14 +312,14 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
   }
 
   void _startTraining(String statType, Duration duration) {
-    // Calculate XP based on duration
+    // Calculate stat increase based on duration (1 stat point per 30 minutes)
+    final totalMinutes = duration.inMinutes;
+    int statIncrease = (totalMinutes / 30).round(); // 1 stat per 30 minutes
+    
+    ref.read(timersProvider.notifier).startTrainingTimer(statType, duration, statIncrease);
+
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    final totalMinutes = duration.inMinutes;
-    int xp = (totalMinutes / 30 * 100).round(); // 100 XP per 30 minutes
-    
-    ref.read(timersProvider.notifier).startTrainingTimer(statType, duration, xp);
-
     String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -341,18 +340,18 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     final totalDuration = timer.duration;
     final completionPercentage = (elapsed.inSeconds / totalDuration.inSeconds * 100).clamp(0, 100);
     
-    int partialXp = 0;
+    int partialStatIncrease = 0;
     String gainMessage = 'You will lose all progress.';
     
     if (completionPercentage >= 75) {
-      partialXp = (timer.metadata?['xp'] ?? 200) * 0.75;
-      gainMessage = 'You will gain ${partialXp.round()} XP (75% of full training).';
+      partialStatIncrease = ((timer.metadata?['statIncrease'] ?? 2) * 0.75).round();
+      gainMessage = 'You will gain +$partialStatIncrease ${statType.toUpperCase()} (75% of full training).';
     } else if (completionPercentage >= 50) {
-      partialXp = (timer.metadata?['xp'] ?? 200) * 0.5;
-      gainMessage = 'You will gain ${partialXp.round()} XP (50% of full training).';
+      partialStatIncrease = ((timer.metadata?['statIncrease'] ?? 2) * 0.5).round();
+      gainMessage = 'You will gain +$partialStatIncrease ${statType.toUpperCase()} (50% of full training).';
     } else if (completionPercentage >= 25) {
-      partialXp = (timer.metadata?['xp'] ?? 200) * 0.25;
-      gainMessage = 'You will gain ${partialXp.round()} XP (25% of full training).';
+      partialStatIncrease = ((timer.metadata?['statIncrease'] ?? 2) * 0.25).round();
+      gainMessage = 'You will gain +$partialStatIncrease ${statType.toUpperCase()} (25% of full training).';
     }
 
     showDialog(
@@ -375,17 +374,17 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: partialXp > 0 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                color: partialStatIncrease > 0 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: partialXp > 0 ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
+                  color: partialStatIncrease > 0 ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    partialXp > 0 ? Icons.check_circle : Icons.warning,
-                    color: partialXp > 0 ? Colors.green : Colors.orange,
+                    partialStatIncrease > 0 ? Icons.check_circle : Icons.warning,
+                    color: partialStatIncrease > 0 ? Colors.green : Colors.orange,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -393,7 +392,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                     child: Text(
                       gainMessage,
                       style: TextStyle(
-                        color: partialXp > 0 ? Colors.green : Colors.orange,
+                        color: partialStatIncrease > 0 ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -422,12 +421,12 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _processCancelledTraining(timer, statType, partialXp);
+              _processCancelledTraining(timer, statType, partialStatIncrease);
             },
             child: Text(
               'Cancel Training',
               style: TextStyle(
-                color: partialXp > 0 ? Colors.orange : Colors.red,
+                color: partialStatIncrease > 0 ? Colors.orange : Colors.red,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -437,40 +436,40 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     );
   }
 
-  void _processCancelledTraining(GameTimer timer, String statType, int partialXp) {
+  void _processCancelledTraining(GameTimer timer, String statType, int partialStatIncrease) {
     // Remove the timer
     ref.read(timersProvider.notifier).removeTimer(timer.id);
     
-    if (partialXp > 0) {
-      // Apply partial XP gains
+    if (partialStatIncrease > 0) {
+      // Apply direct stat increases
       final player = ref.read(playerProvider);
       PlayerStats newStats = player.stats;
       
-      // Apply partial training XP based on stat type
+      // Apply direct stat increases based on stat type
       switch (statType) {
         case 'strength':
-          newStats = newStats.applyTrainingXP(newStats.str, partialXp);
+          newStats = newStats.copyWith(str: newStats.str.copyWith(level: newStats.str.level + partialStatIncrease));
           break;
         case 'intelligence':
-          newStats = newStats.applyTrainingXP(newStats.intl, partialXp);
+          newStats = newStats.copyWith(intl: newStats.intl.copyWith(level: newStats.intl.level + partialStatIncrease));
           break;
         case 'willpower':
-          newStats = newStats.applyTrainingXP(newStats.wil, partialXp);
+          newStats = newStats.copyWith(wil: newStats.wil.copyWith(level: newStats.wil.level + partialStatIncrease));
           break;
         case 'speed':
-          newStats = newStats.applyTrainingXP(newStats.spd, partialXp);
+          newStats = newStats.copyWith(spd: newStats.spd.copyWith(level: newStats.spd.level + partialStatIncrease));
           break;
         case 'ninjutsu':
-          newStats = newStats.applyTrainingXP(newStats.nin, partialXp);
+          newStats = newStats.copyWith(nin: newStats.nin.copyWith(level: newStats.nin.level + partialStatIncrease));
           break;
         case 'genjutsu':
-          newStats = newStats.applyTrainingXP(newStats.gen, partialXp);
+          newStats = newStats.copyWith(gen: newStats.gen.copyWith(level: newStats.gen.level + partialStatIncrease));
           break;
         case 'bukijutsu':
-          newStats = newStats.applyTrainingXP(newStats.buk, partialXp);
+          newStats = newStats.copyWith(buk: newStats.buk.copyWith(level: newStats.buk.level + partialStatIncrease));
           break;
         case 'taijutsu':
-          newStats = newStats.applyTrainingXP(newStats.tai, partialXp);
+          newStats = newStats.copyWith(tai: newStats.tai.copyWith(level: newStats.tai.level + partialStatIncrease));
           break;
       }
       
@@ -478,7 +477,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$statType training cancelled. You gained ${partialXp.round()} XP!'),
+          content: Text('$statType training cancelled. You gained +$partialStatIncrease ${statType.toUpperCase()}!'),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 3),
         ),
@@ -486,7 +485,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$statType training cancelled. No XP gained (less than 25% complete).'),
+          content: Text('$statType training cancelled. No gains (less than 25% complete).'),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 3),
         ),
@@ -554,7 +553,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            _getProgressMessage(completionPercentage),
+            _getProgressMessage(completionPercentage.toDouble()),
             style: TextStyle(
               color: progressColor.withValues(alpha: 0.8),
               fontSize: 10,
@@ -568,23 +567,23 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
 
   String _getProgressMessage(double percentage) {
     if (percentage >= 75) {
-      return '75% threshold reached - Cancel for 75% XP';
+      return '75% threshold reached - Cancel for 75% gains';
     } else if (percentage >= 50) {
-      return '50% threshold reached - Cancel for 50% XP';
+      return '50% threshold reached - Cancel for 50% gains';
     } else if (percentage >= 25) {
-      return '25% threshold reached - Cancel for 25% XP';
+      return '25% threshold reached - Cancel for 25% gains';
     } else {
-      return 'No XP if cancelled yet';
+      return 'No gains if cancelled yet';
     }
   }
 
   void _showTrainingDurationDialog(String statType) {
     final durations = [
-      {'label': '30 minutes', 'duration': const Duration(minutes: 30), 'xp': 100},
-      {'label': '1 hour', 'duration': const Duration(hours: 1), 'xp': 200},
-      {'label': '2 hours', 'duration': const Duration(hours: 2), 'xp': 400},
-      {'label': '4 hours', 'duration': const Duration(hours: 4), 'xp': 800},
-      {'label': '8 hours', 'duration': const Duration(hours: 8), 'xp': 1600},
+      {'label': '30 minutes', 'duration': const Duration(minutes: 30), 'statIncrease': 1},
+      {'label': '1 hour', 'duration': const Duration(hours: 1), 'statIncrease': 2},
+      {'label': '2 hours', 'duration': const Duration(hours: 2), 'statIncrease': 4},
+      {'label': '4 hours', 'duration': const Duration(hours: 4), 'statIncrease': 8},
+      {'label': '8 hours', 'duration': const Duration(hours: 8), 'statIncrease': 16},
     ];
 
     showDialog(
@@ -618,7 +617,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
               subtitle: Text(
-                'Gain ${duration['xp']} XP',
+                'Gain +${duration['statIncrease']} ${statType.toUpperCase()}',
                 style: const TextStyle(color: Colors.white70),
               ),
               onTap: () {
@@ -651,43 +650,43 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     
     ref.read(timersProvider.notifier).completeTimer(timerId);
 
-    // Update player stats using the new training system
+    // Update player stats using direct stat increases
     final player = ref.read(playerProvider);
     PlayerStats newStats = player.stats;
     
-    // Calculate XP based on training duration (stored in metadata)
-    int baseXp = timer.metadata?['xp'] ?? 200; // Default fallback
+    // Get stat increase from metadata
+    int statIncrease = timer.metadata?['statIncrease'] ?? 2; // Default fallback
     
     // Debug: Print current stats before training
     print('Before training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
     print('Base stats - STR: ${newStats.str.level}, WIL: ${newStats.wil.level}, INTL: ${newStats.intl.level}, SPD: ${newStats.spd.level}');
-    print('Training XP: $baseXp');
+    print('Training stat increase: $statIncrease');
     
-    // Apply training XP based on stat type
+    // Apply direct stat increases based on stat type
     switch (statType) {
       case 'strength':
-        newStats = newStats.applyTrainingXP(newStats.str, baseXp);
+        newStats = newStats.copyWith(str: newStats.str.copyWith(level: newStats.str.level + statIncrease));
         break;
       case 'intelligence':
-        newStats = newStats.applyTrainingXP(newStats.intl, baseXp);
+        newStats = newStats.copyWith(intl: newStats.intl.copyWith(level: newStats.intl.level + statIncrease));
         break;
       case 'willpower':
-        newStats = newStats.applyTrainingXP(newStats.wil, baseXp);
+        newStats = newStats.copyWith(wil: newStats.wil.copyWith(level: newStats.wil.level + statIncrease));
         break;
       case 'speed':
-        newStats = newStats.applyTrainingXP(newStats.spd, baseXp);
+        newStats = newStats.copyWith(spd: newStats.spd.copyWith(level: newStats.spd.level + statIncrease));
         break;
       case 'ninjutsu':
-        newStats = newStats.applyTrainingXP(newStats.nin, baseXp);
+        newStats = newStats.copyWith(nin: newStats.nin.copyWith(level: newStats.nin.level + statIncrease));
         break;
       case 'genjutsu':
-        newStats = newStats.applyTrainingXP(newStats.gen, baseXp);
+        newStats = newStats.copyWith(gen: newStats.gen.copyWith(level: newStats.gen.level + statIncrease));
         break;
       case 'bukijutsu':
-        newStats = newStats.applyTrainingXP(newStats.buk, baseXp);
+        newStats = newStats.copyWith(buk: newStats.buk.copyWith(level: newStats.buk.level + statIncrease));
         break;
       case 'taijutsu':
-        newStats = newStats.applyTrainingXP(newStats.tai, baseXp);
+        newStats = newStats.copyWith(tai: newStats.tai.copyWith(level: newStats.tai.level + statIncrease));
         break;
     }
     
@@ -704,31 +703,31 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     String message = 'Training completed! ';
     switch (statType) {
       case 'strength':
-        message += 'Strength increased to ${newStats.str.level}!';
+        message += 'Strength increased by +$statIncrease to ${newStats.str.level}!';
         break;
       case 'intelligence':
-        message += 'Intelligence increased to ${newStats.intl.level}!';
+        message += 'Intelligence increased by +$statIncrease to ${newStats.intl.level}!';
         break;
       case 'willpower':
-        message += 'Willpower increased to ${newStats.wil.level}!';
+        message += 'Willpower increased by +$statIncrease to ${newStats.wil.level}!';
         break;
       case 'speed':
-        message += 'Speed increased to ${newStats.spd.level}!';
+        message += 'Speed increased by +$statIncrease to ${newStats.spd.level}!';
         break;
       case 'ninjutsu':
-        message += 'Ninjutsu increased to ${newStats.nin.level}!';
+        message += 'Ninjutsu increased by +$statIncrease to ${newStats.nin.level}!';
         break;
       case 'genjutsu':
-        message += 'Genjutsu increased to ${newStats.gen.level}!';
+        message += 'Genjutsu increased by +$statIncrease to ${newStats.gen.level}!';
         break;
       case 'bukijutsu':
-        message += 'Bukijutsu increased to ${newStats.buk.level}!';
+        message += 'Bukijutsu increased by +$statIncrease to ${newStats.buk.level}!';
         break;
       case 'taijutsu':
-        message += 'Taijutsu increased to ${newStats.tai.level}!';
+        message += 'Taijutsu increased by +$statIncrease to ${newStats.tai.level}!';
         break;
       default:
-        message += '$statType increased!';
+        message += '$statType increased by +$statIncrease!';
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
