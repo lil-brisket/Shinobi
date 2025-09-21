@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/timer.dart';
 import '../../models/stats.dart';
+import '../../utils/snackbar_utils.dart';
 
 class TrainingDojoScreen extends ConsumerStatefulWidget {
   const TrainingDojoScreen({super.key});
@@ -322,12 +323,10 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     final minutes = duration.inMinutes % 60;
     String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Started $statType training for $durationText! Only one training session allowed at a time.'),
-        backgroundColor: AppTheme.accentColor,
-        duration: const Duration(seconds: 3),
-      ),
+    SnackbarUtils.showSuccess(
+      context,
+      'Started $statType training for $durationText! Only one training session allowed at a time.',
+      backgroundColor: AppTheme.accentColor,
     );
   }
 
@@ -475,20 +474,16 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
       
       ref.read(playerProvider.notifier).updateStats(newStats);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$statType training cancelled. You gained +$partialStatIncrease ${statType.toUpperCase()}!'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+      SnackbarUtils.showSuccess(
+        context,
+        '$statType training cancelled. You gained +$partialStatIncrease ${statType.toUpperCase()}!',
+        backgroundColor: Colors.green,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$statType training cancelled. No gains (less than 25% complete).'),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 3),
-        ),
+      SnackbarUtils.showWarning(
+        context,
+        '$statType training cancelled. No gains (less than 25% complete).',
+        backgroundColor: Colors.orange,
       );
     }
   }
@@ -730,12 +725,10 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
         message += '$statType increased by +$statIncrease!';
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.staminaColor,
-        duration: const Duration(seconds: 3),
-      ),
+    SnackbarUtils.showSuccess(
+      context,
+      message,
+      backgroundColor: AppTheme.staminaColor,
     );
   }
 

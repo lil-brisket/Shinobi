@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/equipment_panel.dart';
+import '../../widgets/silhouette.dart';
 import '../../app/theme.dart';
-import 'items_screen.dart';
 import 'jutsus_screen.dart';
+import 'items_screen.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});
@@ -37,18 +37,18 @@ class InventoryScreen extends StatelessWidget {
                     unselectedLabelColor: Colors.white60,
                     indicatorColor: AppTheme.accentColor,
                     tabs: [
+                      Tab(text: 'Equipment'),
                       Tab(text: 'Items'),
                       Tab(text: 'Jutsus'),
-                      Tab(text: 'Equipment'),
                     ],
                   ),
                 ),
                 Expanded(
                   child: TabBarView(
-                    children: const [
-                      ItemsScreen(),
-                      JutsusScreen(),
-                      EquipmentPanel(),
+                    children: [
+                      const HumanEquipmentLayout(),
+                      const ItemsScreen(),
+                      const JutsusScreen(),
                     ],
                   ),
                 ),

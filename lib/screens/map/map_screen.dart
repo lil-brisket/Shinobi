@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import '../../utils/snackbar_utils.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -66,12 +67,9 @@ class _MapScreenState extends State<MapScreen> {
 
     if (villageEntry.key.isNotEmpty) {
       // Auto-enter village
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Entering ${villageEntry.key}..."),
-          backgroundColor: Colors.amber[700],
-          duration: const Duration(seconds: 2),
-        ),
+      SnackbarUtils.showInfo(
+        context,
+        "Entering ${villageEntry.key}...",
       );
       // TODO: Navigate to VillageHubScreen(villageId: villageEntry.key)
     }

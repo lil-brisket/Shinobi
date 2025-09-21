@@ -1,245 +1,142 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../app/theme.dart';
 import '../../controllers/providers.dart';
-import '../../controllers/equipment_provider.dart';
 import '../../models/item.dart';
 import '../../models/equipment.dart';
 import '../../models/stats.dart';
+import '../../app/theme.dart';
+import '../../utils/snackbar_utils.dart';
 
-class ItemsScreen extends ConsumerWidget {
+class ItemsScreen extends ConsumerStatefulWidget {
   const ItemsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ItemsScreen> createState() => _ItemsScreenState();
+}
+
+class _ItemsScreenState extends ConsumerState<ItemsScreen> {
+  // ----------------- THEME COLORS -----------------
+  final _panel = const Color(0xFF101826);
+  final _panelDark = const Color(0xFF0B111B);
+  final _textDim = const Color(0xFF9AA4B2);
+
+  // Rarity colors matching the existing system
+  final Map<ItemRarity, Color> _rarityColors = const {
+    ItemRarity.common: Color(0xFF2C3A4B),
+    ItemRarity.uncommon: Color(0xFF1E5F43),
+    ItemRarity.rare: Color(0xFF1B4D7A),
+    ItemRarity.epic: Color(0xFF4B2C66),
+    ItemRarity.legendary: Color(0xFF6E4B1B),
+  };
+
+  @override
+  Widget build(BuildContext context) {
     final inventory = ref.watch(inventoryProvider);
+    final consumables = inventory.where((item) => 
+      item.kind == ItemKind.consumable && item.quantity > 0
+    ).toList();
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: inventory.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    child: const Icon(
-                      Icons.inventory_2_outlined,
-                      size: 50,
-                      color: Colors.white60,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'No Items',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Your inventory is empty. Visit the Item Shop to buy some items!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              itemCount: inventory.length,
-              itemBuilder: (context, index) {
-                final item = inventory[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: _buildItemCard(context, ref, item),
-                );
-              },
-            ),
-    );
-  }
-
-  Widget _buildItemCard(BuildContext context, WidgetRef ref, Item item) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _getRarityColor(item.rarity).withValues(alpha: 0.3),
-          width: 1,
-        ),
+      decoration: const BoxDecoration(
+        gradient: AppTheme.primaryGradient,
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: _getRarityColor(item.rarity).withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Center(
-              child: Text(
-                item.icon,
-                style: const TextStyle(fontSize: 24),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
+          // DIVIDER
+          const SizedBox(height: 16),
+          _DividerBar(label: 'Consumables'),
+
+          // CONSUMABLES SECTION
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      item.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getRarityColor(item.rarity).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        item.rarity.name.toUpperCase(),
-                        style: TextStyle(
-                          color: _getRarityColor(item.rarity),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accentColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Quantity: ${item.quantity}',
-                        style: const TextStyle(
-                          color: AppTheme.accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              decoration: BoxDecoration(
+                color: _panel,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white.withValues(alpha: .05)),
+              ),
+              child: _ConsumablesGrid(
+                items: consumables,
+                rarityColors: _rarityColors,
+                textDim: _textDim,
+                onInspect: _inspect,
+                onUse: _useConsumable,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            children: [
-              ElevatedButton(
-                onPressed: item.quantity > 0 ? () => _useItem(context, ref, item) : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.staminaColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                child: const Text('Use'),
-              ),
-              const SizedBox(height: 8),
-              if (item.isEquippable) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // If the item only fits one slot, equip directly; otherwise show a picker
-                    final meta = item.equip!;
-                    if (meta.allowedSlots.length == 1) {
-                      ref.read(equipmentProvider.notifier).equip(item, preferredSlot: meta.allowedSlots.first);
-                    } else {
-                      _chooseSlotAndEquip(context, ref, item);
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Equipped ${item.name}')),
-                    );
-                  },
-                  icon: const Icon(Icons.checkroom),
-                  label: const Text('Equip'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              OutlinedButton(
-                onPressed: () => _showItemDetails(context, item),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white30),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                child: const Text('Details'),
-              ),
-            ],
           ),
         ],
       ),
     );
   }
 
-  Color _getRarityColor(ItemRarity rarity) {
-    switch (rarity) {
-      case ItemRarity.common:
-        return Colors.grey;
-      case ItemRarity.uncommon:
-        return Colors.green;
-      case ItemRarity.rare:
-        return Colors.blue;
-      case ItemRarity.epic:
-        return Colors.purple;
-      case ItemRarity.legendary:
-        return Colors.orange;
-    }
+  void _inspect(Item item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panelDark,
+      showDragHandle: true,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ItemRow(icon: item.icon, name: item.name),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Chip(
+                  backgroundColor: _rarityColors[item.rarity]!.withOpacity(.25),
+                  side: BorderSide(color: _rarityColors[item.rarity]!.withOpacity(.6)),
+                  label: Text(
+                    item.rarity.name.toUpperCase(),
+                    style: const TextStyle(letterSpacing: 0.5),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text('Qty: ${item.quantity}'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Use this item from your consumables.',
+              style: TextStyle(color: _textDim),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => _useConsumable(item),
+              child: const Text('Use'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _useItem(BuildContext context, WidgetRef ref, Item item) {
+  void _useConsumable(Item item) {
+    Navigator.of(context).pop();
+    
     final player = ref.read(playerProvider);
     final inventory = ref.read(inventoryProvider);
     
-    // Find item in inventory
     final itemIndex = inventory.indexWhere((i) => i.id == item.id);
     if (itemIndex != -1 && inventory[itemIndex].quantity > 0) {
-      // Update inventory
       final updatedInventory = List<Item>.from(inventory);
-      updatedInventory[itemIndex] = updatedInventory[itemIndex].copyWith(
-        quantity: updatedInventory[itemIndex].quantity - 1,
-      );
+      final currentItem = updatedInventory[itemIndex];
+      final newQty = currentItem.quantity - 1;
+      
+      if (newQty <= 0) {
+        updatedInventory.removeAt(itemIndex);
+      } else {
+        updatedInventory[itemIndex] = currentItem.copyWith(quantity: newQty);
+      }
+      
       ref.read(inventoryProvider.notifier).state = updatedInventory;
 
-      // Apply item effects using the new stat system
-      PlayerStats newStats = player.stats;
+      // Apply item effects
+      var newStats = player.stats;
       
       if (item.effect.containsKey('heal')) {
         newStats = newStats.healHP(item.effect['heal'] as int);
@@ -254,193 +151,220 @@ class ItemsScreen extends ConsumerWidget {
       final newPlayer = player.copyWith(stats: newStats);
       ref.read(playerProvider.notifier).updatePlayer(newPlayer);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Used ${item.name}!'),
-          backgroundColor: AppTheme.staminaColor,
-        ),
+      SnackbarUtils.showSuccess(
+        context,
+        '${item.name} used',
+        backgroundColor: AppTheme.staminaColor,
       );
     }
   }
+}
 
-  void _showItemDetails(BuildContext context, Item item) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surfaceColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+// ----------------- WIDGETS -----------------
+
+class _DividerBar extends StatelessWidget {
+  final String label;
+  const _DividerBar({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(children: [
+        const Expanded(child: Divider(height: 24, thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(label,
+              style:
+                  Theme.of(context).textTheme.labelLarge?.copyWith(height: 1)),
+        ),
+        const Expanded(child: Divider(height: 24, thickness: 1)),
+      ]),
+    );
+  }
+}
+
+class _ConsumablesGrid extends StatelessWidget {
+  final List<Item> items;
+  final Map<ItemRarity, Color> rarityColors;
+  final Color textDim;
+  final void Function(Item) onInspect;
+  final void Function(Item) onUse;
+
+  const _ConsumablesGrid({
+    required this.items,
+    required this.rarityColors,
+    required this.textDim,
+    required this.onInspect,
+    required this.onUse,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 60,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.circular(2),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: textDim,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No consumables available',
+              style: TextStyle(
+                color: textDim,
+                fontSize: 16,
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: .85,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final it = items[i];
+        final base = rarityColors[it.rarity]!;
+        return InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => onUse(it),
+          onLongPress: () => onInspect(it),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  base.withOpacity(.25),
+                  base.withOpacity(.12),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withOpacity(.06)),
+            ),
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: _getRarityColor(item.rarity).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Center(
-                    child: Text(
-                      item.icon,
-                      style: const TextStyle(fontSize: 28),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B2332),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.35),
+                            blurRadius: 16,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      alignment: Alignment.center,
+                      child: _ItemIcon(it.icon, size: 36),
+                    ),
+                    Positioned(
+                      right: -4,
+                      top: -6,
+                      child: Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _getRarityColor(item.rarity).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.black.withOpacity(.65),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Colors.white.withOpacity(.12)),
                         ),
                         child: Text(
-                          '${item.rarity.name.toUpperCase()} ITEM',
-                          style: TextStyle(
-                            color: _getRarityColor(item.rarity),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          '×${it.quantity}',
+                          style: const TextStyle(fontSize: 11),
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  it.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  it.rarity.name.toUpperCase(),
+                  style:
+                      TextStyle(fontSize: 11, color: textDim, letterSpacing: .5),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Description',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              item.description,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Effects',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...item.effect.entries.map((entry) => Container(
-              margin: const EdgeInsets.only(bottom: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    '${entry.key}: ',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '${entry.value}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            )),
-            const SizedBox(height: 16),
-            const Text(
-              'Quantity',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.accentColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${item.quantity} in inventory',
-                style: const TextStyle(
-                  color: AppTheme.accentColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
 
-  void _chooseSlotAndEquip(BuildContext context, WidgetRef ref, Item item) async {
-    final chosen = await showModalBottomSheet<SlotType>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            const Text('Choose slot'),
-            const SizedBox(height: 8),
-            ...item.equip!.allowedSlots.map((s) => ListTile(
-              leading: const Icon(Icons.checkroom),
-              title: Text(s.name),
-              onTap: () => Navigator.pop(context, s),
-            )),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-    if (chosen != null) {
-      ref.read(equipmentProvider.notifier).equip(item, preferredSlot: chosen);
+class _ItemIcon extends StatelessWidget {
+  final String asset;
+  final double size;
+  const _ItemIcon(this.asset, {this.size = 28});
+
+  @override
+  Widget build(BuildContext context) {
+    // Check if it's an emoji or asset path
+    if (asset.length <= 4 && !asset.contains('/')) {
+      // Treat as emoji
+      return Text(
+        asset,
+        style: TextStyle(fontSize: size),
+      );
     }
+    
+    // Treat as asset path
+    return Image.asset(
+      asset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => Icon(Icons.inventory_2_outlined, size: size),
+    );
+  }
+}
+
+class _ItemRow extends StatelessWidget {
+  final String icon;
+  final String name;
+  const _ItemRow({required this.icon, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _ItemIcon(icon, size: 36),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(name,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ),
+      ],
+    );
   }
 }

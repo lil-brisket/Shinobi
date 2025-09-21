@@ -4,6 +4,7 @@ import '../../widgets/currency_pill.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/item.dart';
+import '../../utils/snackbar_utils.dart';
 
 class ItemShopScreen extends ConsumerWidget {
   const ItemShopScreen({super.key});
@@ -266,18 +267,16 @@ class ItemShopScreen extends ConsumerWidget {
         ref.read(inventoryProvider.notifier).state = [...inventory, item];
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Purchased ${item.name} for $price Ryo!'),
-          backgroundColor: AppTheme.staminaColor,
-        ),
+      SnackbarUtils.showSuccess(
+        context,
+        'Purchased ${item.name} for $price Ryo!',
+        backgroundColor: AppTheme.staminaColor,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough Ryo!'),
-          backgroundColor: AppTheme.hpColor,
-        ),
+      SnackbarUtils.showError(
+        context,
+        'Not enough Ryo!',
+        backgroundColor: AppTheme.hpColor,
       );
     }
   }

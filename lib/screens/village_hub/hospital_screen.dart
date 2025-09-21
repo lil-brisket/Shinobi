@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/item.dart';
 import '../../models/stats.dart';
+import '../../utils/snackbar_utils.dart';
 
 class HospitalScreen extends ConsumerWidget {
   const HospitalScreen({super.key});
@@ -141,11 +142,9 @@ class HospitalScreen extends ConsumerWidget {
     final player = ref.read(playerProvider);
     ref.read(playerProvider.notifier).updateStats(player.stats.restoreAll());
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fully rested! All stats restored!'),
-        backgroundColor: AppTheme.staminaColor,
-      ),
+    SnackbarUtils.showSuccess(
+      context,
+      'Fully rested! All stats restored!',
     );
   }
 
@@ -261,11 +260,9 @@ class HospitalScreen extends ConsumerWidget {
       ref.read(playerProvider.notifier).state = newPlayer;
 
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Used ${item.name}!'),
-          backgroundColor: AppTheme.staminaColor,
-        ),
+      SnackbarUtils.showSuccess(
+        context,
+        'Used ${item.name}!',
       );
     }
   }

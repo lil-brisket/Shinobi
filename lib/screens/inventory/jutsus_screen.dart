@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/jutsu.dart';
+import '../../utils/snackbar_utils.dart';
 
 class JutsusScreen extends ConsumerWidget {
   const JutsusScreen({super.key});
@@ -283,11 +284,10 @@ class JutsusScreen extends ConsumerWidget {
       updatedJutsus[jutsuIndex] = updatedJutsus[jutsuIndex].copyWith(isEquipped: true);
       ref.read(jutsusProvider.notifier).state = updatedJutsus;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Equipped ${jutsu.name}!'),
-          backgroundColor: AppTheme.staminaColor,
-        ),
+      SnackbarUtils.showSuccess(
+        context,
+        'Equipped ${jutsu.name}!',
+        backgroundColor: AppTheme.staminaColor,
       );
     }
   }
@@ -301,11 +301,10 @@ class JutsusScreen extends ConsumerWidget {
       updatedJutsus[jutsuIndex] = updatedJutsus[jutsuIndex].copyWith(isEquipped: false);
       ref.read(jutsusProvider.notifier).state = updatedJutsus;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unequipped ${jutsu.name}!'),
-          backgroundColor: AppTheme.hpColor,
-        ),
+      SnackbarUtils.showInfo(
+        context,
+        'Unequipped ${jutsu.name}!',
+        backgroundColor: AppTheme.hpColor,
       );
     }
   }

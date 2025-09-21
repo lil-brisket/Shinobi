@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../controllers/auth_provider.dart';
 import '../../constants/villages.dart';
+import '../../utils/snackbar_utils.dart';
 import '../../models/stats.dart';
 import '../../models/village.dart';
 import '../../models/player.dart';
@@ -470,11 +471,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     settings[key] = value;
     ref.read(settingsProvider.notifier).state = settings;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${key.replaceAll('Enabled', '')} ${value ? 'enabled' : 'disabled'}'),
-        backgroundColor: AppTheme.staminaColor,
-      ),
+    SnackbarUtils.showInfo(
+      context,
+      '${key.replaceAll('Enabled', '')} ${value ? 'enabled' : 'disabled'}',
     );
   }
 
@@ -521,11 +520,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 final updatedPlayer = player.copyWith(name: nameController.text.trim());
                 ref.read(playerProvider.notifier).state = updatedPlayer;
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Profile updated successfully!'),
-                    backgroundColor: AppTheme.staminaColor,
-                  ),
+                SnackbarUtils.showSuccess(
+                  context,
+                  'Profile updated successfully!',
                 );
               }
             },
@@ -540,20 +537,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _viewJutsus(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Inventory > Jutsus to view equipped jutsus'),
-        backgroundColor: AppTheme.accentColor,
-      ),
+    SnackbarUtils.showInfo(
+      context,
+      'Navigate to Inventory > Jutsus to view equipped jutsus',
     );
   }
 
   void _viewInventory(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Inventory to view your items'),
-        backgroundColor: AppTheme.accentColor,
-      ),
+    SnackbarUtils.showInfo(
+      context,
+      'Navigate to Inventory to view your items',
     );
   }
 
@@ -774,12 +767,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ref.read(playerProvider.notifier).state = updatedPlayer;
               
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Successfully transferred to ${newVillage.name}!'),
-                  backgroundColor: AppTheme.accentColor,
-                  duration: const Duration(seconds: 3),
-                ),
+              SnackbarUtils.showSuccess(
+                context,
+                'Successfully transferred to ${newVillage.name}!',
+                backgroundColor: AppTheme.accentColor,
               );
             },
             child: const Text(
