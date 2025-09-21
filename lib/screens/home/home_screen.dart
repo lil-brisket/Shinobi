@@ -5,6 +5,7 @@ import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/chat.dart';
+import '../../models/stats.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -21,71 +22,207 @@ class HomeScreen extends ConsumerWidget {
           gradient: AppTheme.primaryGradient,
         ),
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              // Simulate refresh
-              await Future.delayed(const Duration(seconds: 1));
-            },
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: 120,
-                  pinned: true,
-                  flexibleSpace: FlexibleSpaceBar(
-                    titlePadding: const EdgeInsets.only(left: 16, bottom: 8),
-                    title: Text(
-                      'Welcome, ${player.name}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Header
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome back, ${player.name}!',
+                        style: AppTheme.headingStyle,
                       ),
-                    ),
-                    background: Container(
-                      decoration: const BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
+                      const SizedBox(height: 8),
+                      Text(
+                        'Hidden Leaf Village • Level ${player.stats.level}',
+                        style: AppTheme.descriptionStyle,
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    const SizedBox(height: 8),
-                    const SectionHeader(title: 'Game Updates'),
-                    const SizedBox(height: 4),
-                    ...news.map((newsItem) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: InfoCard(
-                        title: newsItem.title,
-                        subtitle: newsItem.body,
-                        leadingWidget: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Icon(
-                            Icons.newspaper,
-                            color: AppTheme.accentColor,
-                            size: 18,
-                          ),
-                        ),
-                        trailingWidget: Text(
-                          _formatDate(newsItem.date),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white60,
+
+                // Quick Stats
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InfoCard(
+                          title: '${player.ryo}',
+                          subtitle: 'Ryo',
+                          leadingWidget: const Icon(
+                            Icons.monetization_on,
+                            color: AppTheme.ryoColor,
                           ),
                         ),
                       ),
-                    )),
-                    const SizedBox(height: 16),
-                    const SectionHeader(title: 'Chat'),
-                    const SizedBox(height: 8),
-                    _buildChatTabs(context, ref, chatMessages),
-                  ]),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InfoCard(
+                          title: '${_getCurrentHP(player.stats)}/${_getMaxHP(player.stats)}',
+                          subtitle: 'HP',
+                          leadingWidget: const Icon(
+                            Icons.favorite,
+                            color: AppTheme.hpColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+
+                const SizedBox(height: 24),
+
+                // Latest News Section
+                SectionHeader(
+                  title: 'Latest News',
+                  trailing: TextButton(
+                    onPressed: () {
+                      // TODO: Navigate to full news screen
+                    },
+                    child: const Text('View All'),
+                  ),
+                ),
+                
+                SizedBox(
+                  height: 160,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: news.length,
+                    itemBuilder: (context, index) {
+                      final newsItem = news[index];
+                      return Container(
+                        width: 280,
+                        margin: const EdgeInsets.only(right: 12),
+                        child: InfoCard(
+                          title: newsItem.title,
+                          subtitle: newsItem.body,
+                          onTap: () {
+                            // TODO: Show full news item
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Recent Chat Messages
+                SectionHeader(
+                  title: 'Recent Messages',
+                  trailing: TextButton(
+                    onPressed: () {
+                      // TODO: Navigate to chat screen
+                    },
+                    child: const Text('View All'),
+                  ),
+                ),
+                
+                ...chatMessages.take(3).map((message) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: InfoCard(
+                    title: message.senderName,
+                    subtitle: message.message,
+                    leadingWidget: CircleAvatar(
+                      radius: 16,
+                      backgroundImage: NetworkImage(message.avatarUrl),
+                      child: message.avatarUrl.isEmpty 
+                        ? Text(message.senderName[0])
+                        : null,
+                    ),
+                    trailingWidget: Text(
+                      _formatTime(message.timestamp),
+                      style: AppTheme.descriptionStyle,
+                    ),
+                    onTap: () {
+                      // TODO: Navigate to chat
+                    },
+                  ),
+                )),
+
+                const SizedBox(height: 24),
+
+                // Quick Actions
+                SectionHeader(title: 'Quick Actions'),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InfoCard(
+                              title: 'Training Dojo',
+                              subtitle: 'Improve your stats',
+                              leadingWidget: const Icon(
+                                Icons.fitness_center,
+                                color: AppTheme.chakraColor,
+                              ),
+                              onTap: () {
+                                // TODO: Navigate to training dojo
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InfoCard(
+                              title: 'Missions',
+                              subtitle: 'Take on new challenges',
+                              leadingWidget: const Icon(
+                                Icons.assignment,
+                                color: AppTheme.attackColor,
+                              ),
+                              onTap: () {
+                                // TODO: Navigate to missions
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InfoCard(
+                              title: 'Inventory',
+                              subtitle: 'Manage your items',
+                              leadingWidget: const Icon(
+                                Icons.inventory,
+                                color: AppTheme.defenseColor,
+                              ),
+                              onTap: () {
+                                // TODO: Navigate to inventory
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InfoCard(
+                              title: 'Village Hub',
+                              subtitle: 'Explore the village',
+                              leadingWidget: const Icon(
+                                Icons.business,
+                                color: AppTheme.staminaColor,
+                              ),
+                              onTap: () {
+                                // TODO: Navigate to village hub
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 100), // Bottom padding for navigation bar
               ],
             ),
           ),
@@ -94,157 +231,26 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildChatTabs(BuildContext context, WidgetRef ref, List<ChatMessage> messages) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const TabBar(
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
-              indicatorColor: AppTheme.accentColor,
-              tabs: [
-                Tab(text: 'Global Chat'),
-                Tab(text: 'Clan Chat'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 200,
-            child: TabBarView(
-              children: [
-                _buildChatList(context, messages.where((m) => m.type == ChatType.global).toList()),
-                _buildChatList(context, messages.where((m) => m.type == ChatType.clan).toList()),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: const TextStyle(color: Colors.white60),
-                      border: InputBorder.none,
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    // Handle send message
-                  },
-                  icon: const Icon(
-                    Icons.send,
-                    color: AppTheme.accentColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChatList(BuildContext context, List<ChatMessage> messages) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final message = messages[index];
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage(message.avatarUrl),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          message.senderName,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatTime(message.timestamp),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white60,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      message.message,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatDate(DateTime date) {
+  String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
-    final difference = now.difference(date);
+    final difference = now.difference(timestamp);
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
+    if (difference.inMinutes < 1) {
       return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
     }
   }
 
-  String _formatTime(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+  int _getMaxHP(PlayerStats stats) {
+    return 80 + 20 * stats.level + 6 * stats.str.level + 2 * stats.wil.level;
+  }
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
+  int _getCurrentHP(PlayerStats stats) {
+    return stats.currentHP ?? _getMaxHP(stats);
   }
 }

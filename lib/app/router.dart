@@ -31,22 +31,27 @@ class AppRouter {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
-      final authState = ProviderScope.containerOf(context).read(authProvider);
-      final isAuthRoute = state.uri.path.startsWith('/login') ||
-          state.uri.path.startsWith('/register') ||
-          state.uri.path.startsWith('/start');
-      
-      // If not authenticated and trying to access protected routes
-      if (!authState.isAuthenticated && !isAuthRoute && state.uri.path != '/') {
+      try {
+        final authState = ProviderScope.containerOf(context).read(authProvider);
+        final isAuthRoute = state.uri.path.startsWith('/login') ||
+            state.uri.path.startsWith('/register') ||
+            state.uri.path.startsWith('/start');
+        
+        // If not authenticated and trying to access protected routes
+        if (!authState.isAuthenticated && !isAuthRoute && state.uri.path != '/') {
+          return '/start';
+        }
+        
+        // If authenticated and on auth routes, redirect to home
+        if (authState.isAuthenticated && isAuthRoute) {
+          return '/home';
+        }
+        return null;
+      } catch (e) {
+        print('DEBUG ROUTER: Error accessing auth state: $e');
+        // If there's an error accessing auth state, redirect to start
         return '/start';
       }
-      
-      // If authenticated and on auth routes, redirect to home
-      if (authState.isAuthenticated && isAuthRoute) {
-        return '/home';
-      }
-      
-      return null;
     },
     routes: [
       // Splash Screen
