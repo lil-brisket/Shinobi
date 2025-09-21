@@ -13,7 +13,7 @@ class JutsusScreen extends ConsumerWidget {
     final jutsus = ref.watch(jutsusProvider);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: jutsus.isEmpty
           ? Center(
               child: Column(

@@ -11,7 +11,7 @@ class InventoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Inventory'),
@@ -38,7 +38,6 @@ class InventoryScreen extends StatelessWidget {
                     indicatorColor: AppTheme.accentColor,
                     tabs: [
                       Tab(text: 'Equipment'),
-                      Tab(text: 'Items'),
                       Tab(text: 'Jutsus'),
                     ],
                   ),
@@ -46,8 +45,7 @@ class InventoryScreen extends StatelessWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      const HumanEquipmentLayout(),
-                      const ItemsScreen(),
+                      const ImprovedInventoryLayout(),
                       const JutsusScreen(),
                     ],
                   ),
