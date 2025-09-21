@@ -44,7 +44,7 @@ class HumanEquipmentLayout extends ConsumerWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-          constraints: const BoxConstraints(minHeight: 420),
+          constraints: const BoxConstraints(minHeight: 480),
           decoration: BoxDecoration(
             color: const Color(0xFF101826),
             borderRadius: BorderRadius.circular(18),
@@ -104,7 +104,7 @@ class HumanEquipmentLayout extends ConsumerWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-          constraints: const BoxConstraints(minHeight: 420), // <- more room
+          constraints: const BoxConstraints(minHeight: 480), // <- more room
           decoration: BoxDecoration(
             color: const Color(0xFF101826),
             borderRadius: BorderRadius.circular(18),
@@ -820,107 +820,141 @@ class _Silhouette extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.grey.withOpacity(0.1),
-      child: Stack(
-        children: [
-          // Simple human silhouette using basic shapes
-          Center(
-            child: Container(
-              width: 150,
-              height: 300,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Head
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
+      child: Center(
+        child: Container(
+          width: 240,
+          height: 420,
+          child: Stack(
+            children: [
+              // Human silhouette using PNG image
+              Positioned(
+                left: 30,
+                top: 30,
+                child: Container(
+                  width: 180,
+                  height: 360,
+                  child: Image.asset(
+                    'assets/images/human_outline.png',
+                    width: 180,
+                    height: 360,
+                    fit: BoxFit.contain,
+                    color: Colors.grey.withOpacity(0.3),
+                    colorBlendMode: BlendMode.modulate,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to basic shapes if image fails to load
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Head
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Body (moved up)
+                          Container(
+                            width: 70,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Waist (new slot)
+                          Container(
+                            width: 60,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Legs (moved up)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                width: 30,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 10),
-                  // Body
-                  Container(
-                    width: 60,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Legs
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 25,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        width: 25,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
+              
+              // Equipment slots positioned on top of the human silhouette
+              Positioned(
+                top: 50, // Head area
+                left: 90, // Center on head
+                child: _buildSlotButton('Head', equipped[SlotType.head]),
+              ),
+              Positioned(
+                top: 130, // Body area (moved up)
+                left: 90, // Center on body
+                child: _buildSlotButton('Body', equipped[SlotType.body]),
+              ),
+              Positioned(
+                top: 200, // Waist area (new position)
+                left: 90, // Center on waist
+                child: _buildSlotButton('Waist', equipped[SlotType.waist]),
+              ),
+              Positioned(
+                top: 260, // Legs area (moved up)
+                left: 90, // Center on legs
+                child: _buildSlotButton('Legs', equipped[SlotType.legs]),
+              ),
+              Positioned(
+                top: 340, // Feet area
+                left: 90, // Center on feet
+                child: _buildSlotButton('Feet', equipped[SlotType.feet]),
+              ),
+              Positioned(
+                top: 130, // Arm level (moved up with body)
+                left: 30, // Left arm position
+                child: _buildSlotButton('L Arm', equipped[SlotType.armLeft]),
+              ),
+              Positioned(
+                top: 130, // Arm level (moved up with body)
+                left: 150, // Right arm position
+                child: _buildSlotButton('R Arm', equipped[SlotType.armRight]),
+              ),
+            ],
           ),
-          
-          // Equipment slots - simple positioned containers
-          Positioned(
-            top: 50,
-            left: 100,
-            child: _buildSlotButton('Head', equipped[SlotType.head]),
-          ),
-          Positioned(
-            top: 150,
-            left: 100,
-            child: _buildSlotButton('Body', equipped[SlotType.body]),
-          ),
-          Positioned(
-            top: 250,
-            left: 100,
-            child: _buildSlotButton('Legs', equipped[SlotType.legs]),
-          ),
-          Positioned(
-            top: 320,
-            left: 100,
-            child: _buildSlotButton('Feet', equipped[SlotType.feet]),
-          ),
-          Positioned(
-            top: 150,
-            left: 50,
-            child: _buildSlotButton('L Arm', equipped[SlotType.armLeft]),
-          ),
-          Positioned(
-            top: 150,
-            left: 150,
-            child: _buildSlotButton('R Arm', equipped[SlotType.armRight]),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSlotButton(String label, Item? item) {
     return Container(
-      width: 50,
-      height: 50,
+      width: 60,
+      height: 60,
       decoration: BoxDecoration(
         color: const Color(0xFF1B2332),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
@@ -929,13 +963,13 @@ class _Silhouette extends StatelessWidget {
           Icon(
             item != null ? Icons.check : Icons.add,
             color: item != null ? Colors.green : Colors.white54,
-            size: 20,
+            size: 24,
           ),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 8,
+              fontSize: 9,
             ),
           ),
         ],
