@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/stat_bar.dart';
 import '../../widgets/info_card.dart';
 import '../../widgets/currency_pill.dart';
+import '../../widgets/user_stats_panel.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../controllers/auth_provider.dart';
@@ -24,12 +25,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final player = ref.watch(playerProvider);
-    final settings = ref.watch(settingsProvider);
     final authState = ref.watch(authProvider);
     
-    // Debug: Print when profile rebuilds
-    print('Profile rebuild - STR: ${player.stats.str.level}, INTL: ${player.stats.intl.level}, WIL: ${player.stats.wil.level}, SPD: ${player.stats.spd.level}');
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -71,52 +68,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Player Info Card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundImage: NetworkImage(player.avatarUrl),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              authState.username ?? player.name,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              player.village,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: AppTheme.accentColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            CurrencyPill(
-                              amount: player.ryo,
-                              icon: Icons.monetization_on,
-                              color: AppTheme.ryoColor,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // Player Header with Avatar, Name, Level, and XP Bar
+                _buildPlayerHeader(context, player, authState),
+                const SizedBox(height: 24),
+
+                // User Stats Panel with Tier System
+                const UserStatsPanel(),
+                const SizedBox(height: 24),
 
                 // Village Change Button (only for Chunin rank and above)
                 if (player.rank.index >= PlayerRank.chunin.index)
@@ -136,106 +94,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: const Text('Change Village'),
                     ),
                   ),
-                const SizedBox(height: 24),
-
-                // Health Resources Section
-                const Text(
-                  'Health & Resources',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      StatBar(
-                        label: 'HP',
-                        value: player.stats.maxHp, // Always show as full
-                        maxValue: player.stats.maxHp,
-                        accentColor: AppTheme.hpColor,
-                      ),
-                      StatBar(
-                        label: 'Chakra',
-                        value: player.stats.maxChakra, // Always show as full
-                        maxValue: player.stats.maxChakra,
-                        accentColor: AppTheme.chakraColor,
-                      ),
-                      StatBar(
-                        label: 'Stamina',
-                        value: player.stats.maxStamina, // Always show as full
-                        maxValue: player.stats.maxStamina,
-                        accentColor: AppTheme.staminaColor,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Core Stats Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Core Stats',
-                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatDisplay('STR', player.stats.str.level, AppTheme.attackColor, 'Strength'),
-                          _buildStatDisplay('WIL', player.stats.wil.level, AppTheme.defenseColor, 'Willpower'),
-                          _buildStatDisplay('INTL', player.stats.intl.level, AppTheme.chakraColor, 'Intelligence'),
-                          _buildStatDisplay('SPD', player.stats.spd.level, AppTheme.staminaColor, 'Speed'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Combat Stats Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Combat Stats',
-                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatDisplay('NIN', player.stats.nin.level, AppTheme.chakraColor, 'Ninjutsu'),
-                          _buildStatDisplay('GEN', player.stats.gen.level, AppTheme.defenseColor, 'Genjutsu'),
-                          _buildStatDisplay('BUK', player.stats.buk.level, AppTheme.attackColor, 'Bukijutsu'),
-                          _buildStatDisplay('TAI', player.stats.tai.level, AppTheme.staminaColor, 'Taijutsu'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 24),
 
                 // Loadout Summary
@@ -301,58 +159,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Settings Section
-                const Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildSettingTile(
-                        context,
-                        ref,
-                        'Sound Effects',
-                        'Enable/disable sound effects',
-                        Icons.volume_up,
-                        settings['soundEnabled'] ?? true,
-                        (value) => _updateSetting('soundEnabled', value),
-                      ),
-                      const Divider(color: Colors.white24),
-                      _buildSettingTile(
-                        context,
-                        ref,
-                        'Notifications',
-                        'Enable/disable push notifications',
-                        Icons.notifications,
-                        settings['notificationsEnabled'] ?? true,
-                        (value) => _updateSetting('notificationsEnabled', value),
-                      ),
-                      const Divider(color: Colors.white24),
-                      _buildSettingTile(
-                        context,
-                        ref,
-                        'Dark Theme',
-                        'Use dark theme (always enabled)',
-                        Icons.dark_mode,
-                        settings['darkTheme'] ?? true,
-                        null, // Disabled since we only support dark theme
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
                 // Actions
                 SizedBox(
                   width: double.infinity,
@@ -374,108 +180,106 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildStatDisplay(String label, int value, Color color, String fullName) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 2,
-            ),
+  // Player Header with Avatar, Name, Level, and XP Bar
+  Widget _buildPlayerHeader(BuildContext context, Player player, AuthState authState) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: NetworkImage(player.avatarUrl),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      authState.username ?? player.name,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      player.village,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.accentColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CurrencyPill(
+                      amount: player.ryo,
+                      icon: Icons.monetization_on,
+                      color: AppTheme.ryoColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          child: Center(
-            child: Text(
-              value.toString(),
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          const SizedBox(height: 16),
+          // Level and XP Bar
+          Row(
+            children: [
+              Text(
+                'Level ${player.stats.level}',
+                style: AppTheme.statLabelStyle.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Value: ${player.stats.str}',
+                style: AppTheme.statValueStyle,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Stat Progress Bar
+          Container(
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.textSecondary.withValues(alpha: 0.2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: _calculateStatProgress(player.stats),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.accentColor, AppTheme.chakraColor],
+                  ),
+                  boxShadow: AppTheme.progressBarGlow,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          fullName,
-          style: TextStyle(
-            color: color.withValues(alpha: 0.8),
-            fontSize: 10,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettingTile(
-    BuildContext context,
-    WidgetRef ref,
-    String title,
-    String subtitle,
-    IconData icon,
-    bool value,
-    Function(bool)? onChanged,
-  ) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppTheme.accentColor.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Icon(
-          icon,
-          color: AppTheme.accentColor,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: Colors.white70),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeThumbColor: AppTheme.accentColor,
-        inactiveThumbColor: Colors.white60,
-        inactiveTrackColor: Colors.white24,
+        ],
       ),
     );
   }
 
-  void _updateSetting(String key, bool value) {
-    final settings = ref.read(settingsProvider);
-    settings[key] = value;
-    ref.read(settingsProvider.notifier).state = settings;
 
-    SnackbarUtils.showInfo(
-      context,
-      '${key.replaceAll('Enabled', '')} ${value ? 'enabled' : 'disabled'}',
-    );
+  // Calculate stat progress for the progress bar (percentage of cap)
+  double _calculateStatProgress(PlayerStats stats) {
+    // Using base stat cap of 250k
+    const cap = 250000.0;
+    return (stats.str / cap).clamp(0.0, 1.0);
   }
+
 
   void _showEditProfile(BuildContext context, WidgetRef ref) {
     final player = ref.read(playerProvider);

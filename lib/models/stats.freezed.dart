@@ -188,15 +188,16 @@ PlayerStats _$PlayerStatsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PlayerStats {
-  int get level => throw _privateConstructorUsedError;
-  TrainableStat get str => throw _privateConstructorUsedError;
-  TrainableStat get intl => throw _privateConstructorUsedError;
-  TrainableStat get spd => throw _privateConstructorUsedError;
-  TrainableStat get wil => throw _privateConstructorUsedError;
-  TrainableStat get nin => throw _privateConstructorUsedError;
-  TrainableStat get gen => throw _privateConstructorUsedError;
-  TrainableStat get buk => throw _privateConstructorUsedError;
-  TrainableStat get tai =>
+  int get level =>
+      throw _privateConstructorUsedError; // Raw stat values instead of TrainableStat objects
+  int get str => throw _privateConstructorUsedError;
+  int get intl => throw _privateConstructorUsedError;
+  int get spd => throw _privateConstructorUsedError;
+  int get wil => throw _privateConstructorUsedError;
+  int get nin => throw _privateConstructorUsedError;
+  int get gen => throw _privateConstructorUsedError;
+  int get buk => throw _privateConstructorUsedError;
+  int get tai =>
       throw _privateConstructorUsedError; // Current resource values (for UI display)
   int? get currentHP => throw _privateConstructorUsedError;
   int? get currentSP => throw _privateConstructorUsedError;
@@ -220,26 +221,17 @@ abstract class $PlayerStatsCopyWith<$Res> {
   @useResult
   $Res call(
       {int level,
-      TrainableStat str,
-      TrainableStat intl,
-      TrainableStat spd,
-      TrainableStat wil,
-      TrainableStat nin,
-      TrainableStat gen,
-      TrainableStat buk,
-      TrainableStat tai,
+      int str,
+      int intl,
+      int spd,
+      int wil,
+      int nin,
+      int gen,
+      int buk,
+      int tai,
       int? currentHP,
       int? currentSP,
       int? currentCP});
-
-  $TrainableStatCopyWith<$Res> get str;
-  $TrainableStatCopyWith<$Res> get intl;
-  $TrainableStatCopyWith<$Res> get spd;
-  $TrainableStatCopyWith<$Res> get wil;
-  $TrainableStatCopyWith<$Res> get nin;
-  $TrainableStatCopyWith<$Res> get gen;
-  $TrainableStatCopyWith<$Res> get buk;
-  $TrainableStatCopyWith<$Res> get tai;
 }
 
 /// @nodoc
@@ -278,35 +270,35 @@ class _$PlayerStatsCopyWithImpl<$Res, $Val extends PlayerStats>
       str: null == str
           ? _value.str
           : str // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       intl: null == intl
           ? _value.intl
           : intl // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       spd: null == spd
           ? _value.spd
           : spd // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       wil: null == wil
           ? _value.wil
           : wil // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       nin: null == nin
           ? _value.nin
           : nin // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       gen: null == gen
           ? _value.gen
           : gen // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       buk: null == buk
           ? _value.buk
           : buk // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       tai: null == tai
           ? _value.tai
           : tai // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       currentHP: freezed == currentHP
           ? _value.currentHP
           : currentHP // ignore: cast_nullable_to_non_nullable
@@ -321,86 +313,6 @@ class _$PlayerStatsCopyWithImpl<$Res, $Val extends PlayerStats>
               as int?,
     ) as $Val);
   }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get str {
-    return $TrainableStatCopyWith<$Res>(_value.str, (value) {
-      return _then(_value.copyWith(str: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get intl {
-    return $TrainableStatCopyWith<$Res>(_value.intl, (value) {
-      return _then(_value.copyWith(intl: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get spd {
-    return $TrainableStatCopyWith<$Res>(_value.spd, (value) {
-      return _then(_value.copyWith(spd: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get wil {
-    return $TrainableStatCopyWith<$Res>(_value.wil, (value) {
-      return _then(_value.copyWith(wil: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get nin {
-    return $TrainableStatCopyWith<$Res>(_value.nin, (value) {
-      return _then(_value.copyWith(nin: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get gen {
-    return $TrainableStatCopyWith<$Res>(_value.gen, (value) {
-      return _then(_value.copyWith(gen: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get buk {
-    return $TrainableStatCopyWith<$Res>(_value.buk, (value) {
-      return _then(_value.copyWith(buk: value) as $Val);
-    });
-  }
-
-  /// Create a copy of PlayerStats
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $TrainableStatCopyWith<$Res> get tai {
-    return $TrainableStatCopyWith<$Res>(_value.tai, (value) {
-      return _then(_value.copyWith(tai: value) as $Val);
-    });
-  }
 }
 
 /// @nodoc
@@ -413,34 +325,17 @@ abstract class _$$PlayerStatsImplCopyWith<$Res>
   @useResult
   $Res call(
       {int level,
-      TrainableStat str,
-      TrainableStat intl,
-      TrainableStat spd,
-      TrainableStat wil,
-      TrainableStat nin,
-      TrainableStat gen,
-      TrainableStat buk,
-      TrainableStat tai,
+      int str,
+      int intl,
+      int spd,
+      int wil,
+      int nin,
+      int gen,
+      int buk,
+      int tai,
       int? currentHP,
       int? currentSP,
       int? currentCP});
-
-  @override
-  $TrainableStatCopyWith<$Res> get str;
-  @override
-  $TrainableStatCopyWith<$Res> get intl;
-  @override
-  $TrainableStatCopyWith<$Res> get spd;
-  @override
-  $TrainableStatCopyWith<$Res> get wil;
-  @override
-  $TrainableStatCopyWith<$Res> get nin;
-  @override
-  $TrainableStatCopyWith<$Res> get gen;
-  @override
-  $TrainableStatCopyWith<$Res> get buk;
-  @override
-  $TrainableStatCopyWith<$Res> get tai;
 }
 
 /// @nodoc
@@ -477,35 +372,35 @@ class __$$PlayerStatsImplCopyWithImpl<$Res>
       str: null == str
           ? _value.str
           : str // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       intl: null == intl
           ? _value.intl
           : intl // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       spd: null == spd
           ? _value.spd
           : spd // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       wil: null == wil
           ? _value.wil
           : wil // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       nin: null == nin
           ? _value.nin
           : nin // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       gen: null == gen
           ? _value.gen
           : gen // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       buk: null == buk
           ? _value.buk
           : buk // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       tai: null == tai
           ? _value.tai
           : tai // ignore: cast_nullable_to_non_nullable
-              as TrainableStat,
+              as int,
       currentHP: freezed == currentHP
           ? _value.currentHP
           : currentHP // ignore: cast_nullable_to_non_nullable
@@ -527,14 +422,14 @@ class __$$PlayerStatsImplCopyWithImpl<$Res>
 class _$PlayerStatsImpl implements _PlayerStats {
   const _$PlayerStatsImpl(
       {required this.level,
-      this.str = const TrainableStat(),
-      this.intl = const TrainableStat(),
-      this.spd = const TrainableStat(),
-      this.wil = const TrainableStat(),
-      this.nin = const TrainableStat(),
-      this.gen = const TrainableStat(),
-      this.buk = const TrainableStat(),
-      this.tai = const TrainableStat(),
+      this.str = 0,
+      this.intl = 0,
+      this.spd = 0,
+      this.wil = 0,
+      this.nin = 0,
+      this.gen = 0,
+      this.buk = 0,
+      this.tai = 0,
       this.currentHP,
       this.currentSP,
       this.currentCP});
@@ -544,30 +439,31 @@ class _$PlayerStatsImpl implements _PlayerStats {
 
   @override
   final int level;
+// Raw stat values instead of TrainableStat objects
   @override
   @JsonKey()
-  final TrainableStat str;
+  final int str;
   @override
   @JsonKey()
-  final TrainableStat intl;
+  final int intl;
   @override
   @JsonKey()
-  final TrainableStat spd;
+  final int spd;
   @override
   @JsonKey()
-  final TrainableStat wil;
+  final int wil;
   @override
   @JsonKey()
-  final TrainableStat nin;
+  final int nin;
   @override
   @JsonKey()
-  final TrainableStat gen;
+  final int gen;
   @override
   @JsonKey()
-  final TrainableStat buk;
+  final int buk;
   @override
   @JsonKey()
-  final TrainableStat tai;
+  final int tai;
 // Current resource values (for UI display)
   @override
   final int? currentHP;
@@ -627,14 +523,14 @@ class _$PlayerStatsImpl implements _PlayerStats {
 abstract class _PlayerStats implements PlayerStats {
   const factory _PlayerStats(
       {required final int level,
-      final TrainableStat str,
-      final TrainableStat intl,
-      final TrainableStat spd,
-      final TrainableStat wil,
-      final TrainableStat nin,
-      final TrainableStat gen,
-      final TrainableStat buk,
-      final TrainableStat tai,
+      final int str,
+      final int intl,
+      final int spd,
+      final int wil,
+      final int nin,
+      final int gen,
+      final int buk,
+      final int tai,
       final int? currentHP,
       final int? currentSP,
       final int? currentCP}) = _$PlayerStatsImpl;
@@ -643,23 +539,23 @@ abstract class _PlayerStats implements PlayerStats {
       _$PlayerStatsImpl.fromJson;
 
   @override
-  int get level;
+  int get level; // Raw stat values instead of TrainableStat objects
   @override
-  TrainableStat get str;
+  int get str;
   @override
-  TrainableStat get intl;
+  int get intl;
   @override
-  TrainableStat get spd;
+  int get spd;
   @override
-  TrainableStat get wil;
+  int get wil;
   @override
-  TrainableStat get nin;
+  int get nin;
   @override
-  TrainableStat get gen;
+  int get gen;
   @override
-  TrainableStat get buk;
+  int get buk;
   @override
-  TrainableStat get tai; // Current resource values (for UI display)
+  int get tai; // Current resource values (for UI display)
   @override
   int? get currentHP;
   @override

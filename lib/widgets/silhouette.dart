@@ -865,7 +865,7 @@ class _Silhouette extends StatelessWidget {
             children: [
               // Human silhouette using PNG image
               Positioned(
-                left: 15,
+                left: 10,
                 top: 15,
                 child: Container(
                   width: 170,
@@ -970,12 +970,12 @@ class _Silhouette extends StatelessWidget {
               ),
               Positioned(
                 top: 70, // Arm level
-                left: 30, // Left arm position
+                left: 25, // Left arm position
                 child: _buildSlotButton('L Arm', equipped[SlotType.armLeft]),
               ),
               Positioned(
                 top: 70, // Arm level
-                left: 130, // Right arm position
+                left: 135, // Right arm position
                 child: _buildSlotButton('R Arm', equipped[SlotType.armRight]),
               ),
             ],

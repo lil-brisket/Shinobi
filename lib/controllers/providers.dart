@@ -26,18 +26,24 @@ class PlayerNotifier extends StateNotifier<Player> {
     ryo: 15000,
     stats: const PlayerStats(
       level: 25,
-      str: TrainableStat(level: 20, xp: 150),
-      intl: TrainableStat(level: 22, xp: 200),
-      spd: TrainableStat(level: 24, xp: 75),
-      wil: TrainableStat(level: 18, xp: 300),
-      nin: TrainableStat(level: 26, xp: 100),
-      gen: TrainableStat(level: 16, xp: 50),
-      buk: TrainableStat(level: 21, xp: 180),
-      tai: TrainableStat(level: 23, xp: 250),
+      // Stimulated data with proper tier distribution
+      // Base stats (cap: 250k each) - showing various tiers
+      str: 75000,    // 30% of 250k = Tier 3
+      intl: 125000,  // 50% of 250k = Tier 3  
+      spd: 200000,   // 80% of 250k = Tier 4
+      wil: 50000,    // 20% of 250k = Tier 2
+      
+      // Combat stats (cap: 500k each) - showing offense priorities
+      nin: 300000,   // 60% of 500k (main offense) = Tier 3
+      gen: 125000,   // 50% of 250k (secondary offense) = Tier 3
+      buk: 90000,    // 60% of 150k (tertiary offense) = Tier 3
+      tai: 20000,    // 40% of 50k (quaternary offense) = Tier 2
+      
       // Set current values to be reasonable percentages of max
-      currentHP: 600,
-      currentSP: 500,
-      currentCP: 550,
+      // Level 25: base 500 + 100*25 = 3000 max
+      currentHP: 3000,  // Max HP
+      currentSP: 3000,  // Max SP  
+      currentCP: 3000,  // Max CP
     ),
     jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
     itemIds: ['kunai', 'shuriken', 'health_potion'],
@@ -45,7 +51,7 @@ class PlayerNotifier extends StateNotifier<Player> {
   ));
 
   void updateStats(PlayerStats newStats) {
-    print('PlayerNotifier: Updating stats - STR: ${newStats.str.level}, INTL: ${newStats.intl.level}, WIL: ${newStats.wil.level}, SPD: ${newStats.spd.level}');
+    print('PlayerNotifier: Updating stats - STR: ${newStats.str}, INTL: ${newStats.intl}, WIL: ${newStats.wil}, SPD: ${newStats.spd}');
     state = state.copyWith(stats: newStats);
     print('PlayerNotifier: State updated successfully');
   }

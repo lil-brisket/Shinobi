@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/timer_chip.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/tier_badge.dart';
+import '../../widgets/circular_progress.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/timer.dart';
 import '../../models/stats.dart';
 import '../../utils/snackbar_utils.dart';
+import '../../utils/stats_utils.dart';
 
 class TrainingDojoScreen extends ConsumerStatefulWidget {
   const TrainingDojoScreen({super.key});
@@ -56,17 +59,17 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatDisplay('STR', player.stats.str.level, AppTheme.attackColor, 'Strength'),
-                          _buildStatDisplay('WIL', player.stats.wil.level, AppTheme.defenseColor, 'Willpower'),
-                          _buildStatDisplay('INTL', player.stats.intl.level, AppTheme.chakraColor, 'Intelligence'),
-                          _buildStatDisplay('SPD', player.stats.spd.level, AppTheme.staminaColor, 'Speed'),
+                          _buildStatDisplay('STR', player.stats.str, AppTheme.attackColor, 'Strength'),
+                          _buildStatDisplay('WIL', player.stats.wil, AppTheme.defenseColor, 'Willpower'),
+                          _buildStatDisplay('INTL', player.stats.intl, AppTheme.chakraColor, 'Intelligence'),
+                          _buildStatDisplay('SPD', player.stats.spd, AppTheme.staminaColor, 'Speed'),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Combat Stats Section
+                // Offense Stats Section
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -78,17 +81,46 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Combat Stats',
+                        'Offense Stats',
                         style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatDisplay('NIN', player.stats.nin.level, AppTheme.chakraColor, 'Ninjutsu'),
-                          _buildStatDisplay('GEN', player.stats.gen.level, AppTheme.defenseColor, 'Genjutsu'),
-                          _buildStatDisplay('BUK', player.stats.buk.level, AppTheme.attackColor, 'Bukijutsu'),
-                          _buildStatDisplay('TAI', player.stats.tai.level, AppTheme.staminaColor, 'Taijutsu'),
+                          _buildCombatStatDisplay('NIN', player.stats.nin, AppTheme.chakraColor, 'Ninjutsu', player.stats),
+                          _buildCombatStatDisplay('GEN', player.stats.gen, AppTheme.defenseColor, 'Genjutsu', player.stats),
+                          _buildCombatStatDisplay('BUK', player.stats.buk, AppTheme.attackColor, 'Bukijutsu', player.stats),
+                          _buildCombatStatDisplay('TAI', player.stats.tai, AppTheme.staminaColor, 'Taijutsu', player.stats),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Defense Stats Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Defense Stats',
+                        style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildDefenseStatDisplay('NIN', player.stats.nin, AppTheme.chakraColor, 'Ninjutsu'),
+                          _buildDefenseStatDisplay('GEN', player.stats.gen, AppTheme.defenseColor, 'Genjutsu'),
+                          _buildDefenseStatDisplay('BUK', player.stats.buk, AppTheme.attackColor, 'Bukijutsu'),
+                          _buildDefenseStatDisplay('TAI', player.stats.tai, AppTheme.staminaColor, 'Taijutsu'),
                         ],
                       ),
                     ],
@@ -97,82 +129,147 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                 const SizedBox(height: 24),
                 const SectionHeader(title: 'Training Options'),
                 const SizedBox(height: 16),
-                _buildTrainingCard(
-                  context,
-                  'Strength Training',
-                  'Increases your physical strength',
-                  Icons.fitness_center,
-                  AppTheme.attackColor,
-                  'strength',
+                
+                // Core Stats Training
+                _buildTrainingSection(
+                  'Core Stats Training',
+                  [
+                    _buildTrainingCard(
+                      context,
+                      'Strength Training',
+                      'Increases your physical strength',
+                      Icons.fitness_center,
+                      AppTheme.attackColor,
+                      'strength',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Intelligence Training',
+                      'Increases your mental prowess',
+                      Icons.psychology,
+                      AppTheme.chakraColor,
+                      'intelligence',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Willpower Training',
+                      'Increases your mental fortitude',
+                      Icons.self_improvement,
+                      AppTheme.defenseColor,
+                      'willpower',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Speed Training',
+                      'Increases your agility and reflexes',
+                      Icons.directions_run,
+                      AppTheme.staminaColor,
+                      'speed',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Intelligence Training',
-                  'Increases your mental prowess',
-                  Icons.psychology,
-                  AppTheme.chakraColor,
-                  'intelligence',
+                const SizedBox(height: 20),
+                
+                // Offense Stats Training
+                _buildTrainingSection(
+                  'Offense Stats Training',
+                  [
+                    _buildTrainingCard(
+                      context,
+                      'Ninjutsu Offense Training',
+                      'Increases your ninjutsu attack power',
+                      Icons.auto_awesome,
+                      AppTheme.chakraColor,
+                      'ninjutsu_offense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Genjutsu Offense Training',
+                      'Increases your genjutsu attack power',
+                      Icons.visibility,
+                      AppTheme.defenseColor,
+                      'genjutsu_offense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Bukijutsu Offense Training',
+                      'Increases your weapon attack power',
+                      Icons.sports_martial_arts,
+                      AppTheme.attackColor,
+                      'bukijutsu_offense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Taijutsu Offense Training',
+                      'Increases your hand-to-hand attack power',
+                      Icons.fitness_center,
+                      AppTheme.staminaColor,
+                      'taijutsu_offense',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Willpower Training',
-                  'Increases your mental fortitude',
-                  Icons.self_improvement,
-                  AppTheme.defenseColor,
-                  'willpower',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Speed Training',
-                  'Increases your agility and reflexes',
-                  Icons.directions_run,
-                  AppTheme.staminaColor,
-                  'speed',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Ninjutsu Training',
-                  'Increases your ninjutsu combat power',
-                  Icons.auto_awesome,
-                  AppTheme.chakraColor,
-                  'ninjutsu',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Genjutsu Training',
-                  'Increases your genjutsu combat power',
-                  Icons.visibility,
-                  AppTheme.defenseColor,
-                  'genjutsu',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Bukijutsu Training',
-                  'Increases your weapon combat power',
-                  Icons.sports_martial_arts,
-                  AppTheme.attackColor,
-                  'bukijutsu',
-                ),
-                const SizedBox(height: 12),
-                _buildTrainingCard(
-                  context,
-                  'Taijutsu Training',
-                  'Increases your hand-to-hand combat power',
-                  Icons.fitness_center,
-                  AppTheme.staminaColor,
-                  'taijutsu',
+                const SizedBox(height: 20),
+                
+                // Defense Stats Training
+                _buildTrainingSection(
+                  'Defense Stats Training',
+                  [
+                    _buildTrainingCard(
+                      context,
+                      'Ninjutsu Defense Training',
+                      'Increases your ninjutsu defense',
+                      Icons.shield,
+                      AppTheme.chakraColor,
+                      'ninjutsu_defense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Genjutsu Defense Training',
+                      'Increases your genjutsu defense',
+                      Icons.visibility_off,
+                      AppTheme.defenseColor,
+                      'genjutsu_defense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Bukijutsu Defense Training',
+                      'Increases your weapon defense',
+                      Icons.security,
+                      AppTheme.attackColor,
+                      'bukijutsu_defense',
+                    ),
+                    _buildTrainingCard(
+                      context,
+                      'Taijutsu Defense Training',
+                      'Increases your hand-to-hand defense',
+                      Icons.block,
+                      AppTheme.staminaColor,
+                      'taijutsu_defense',
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTrainingSection(String title, List<Widget> trainingCards) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTheme.statLabelStyle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ...trainingCards.map((card) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: card,
+        )),
+      ],
     );
   }
 
@@ -447,28 +544,44 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
       // Apply direct stat increases based on stat type
       switch (statType) {
         case 'strength':
-          newStats = newStats.copyWith(str: newStats.str.copyWith(level: newStats.str.level + partialStatIncrease));
+          newStats = newStats.copyWith(str: newStats.str + partialStatIncrease);
           break;
         case 'intelligence':
-          newStats = newStats.copyWith(intl: newStats.intl.copyWith(level: newStats.intl.level + partialStatIncrease));
+          newStats = newStats.copyWith(intl: newStats.intl + partialStatIncrease);
           break;
         case 'willpower':
-          newStats = newStats.copyWith(wil: newStats.wil.copyWith(level: newStats.wil.level + partialStatIncrease));
+          newStats = newStats.copyWith(wil: newStats.wil + partialStatIncrease);
           break;
         case 'speed':
-          newStats = newStats.copyWith(spd: newStats.spd.copyWith(level: newStats.spd.level + partialStatIncrease));
+          newStats = newStats.copyWith(spd: newStats.spd + partialStatIncrease);
           break;
+        case 'ninjutsu_offense':
         case 'ninjutsu':
-          newStats = newStats.copyWith(nin: newStats.nin.copyWith(level: newStats.nin.level + partialStatIncrease));
+          newStats = newStats.copyWith(nin: newStats.nin + partialStatIncrease);
           break;
+        case 'genjutsu_offense':
         case 'genjutsu':
-          newStats = newStats.copyWith(gen: newStats.gen.copyWith(level: newStats.gen.level + partialStatIncrease));
+          newStats = newStats.copyWith(gen: newStats.gen + partialStatIncrease);
           break;
+        case 'bukijutsu_offense':
         case 'bukijutsu':
-          newStats = newStats.copyWith(buk: newStats.buk.copyWith(level: newStats.buk.level + partialStatIncrease));
+          newStats = newStats.copyWith(buk: newStats.buk + partialStatIncrease);
           break;
+        case 'taijutsu_offense':
         case 'taijutsu':
-          newStats = newStats.copyWith(tai: newStats.tai.copyWith(level: newStats.tai.level + partialStatIncrease));
+          newStats = newStats.copyWith(tai: newStats.tai + partialStatIncrease);
+          break;
+        case 'ninjutsu_defense':
+          newStats = newStats.copyWith(nin: newStats.nin + partialStatIncrease);
+          break;
+        case 'genjutsu_defense':
+          newStats = newStats.copyWith(gen: newStats.gen + partialStatIncrease);
+          break;
+        case 'bukijutsu_defense':
+          newStats = newStats.copyWith(buk: newStats.buk + partialStatIncrease);
+          break;
+        case 'taijutsu_defense':
+          newStats = newStats.copyWith(tai: newStats.tai + partialStatIncrease);
           break;
       }
       
@@ -654,40 +767,56 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     
     // Debug: Print current stats before training
     print('Before training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
-    print('Base stats - STR: ${newStats.str.level}, WIL: ${newStats.wil.level}, INTL: ${newStats.intl.level}, SPD: ${newStats.spd.level}');
+    print('Base stats - STR: ${newStats.str}, WIL: ${newStats.wil}, INTL: ${newStats.intl}, SPD: ${newStats.spd}');
     print('Training stat increase: $statIncrease');
     
     // Apply direct stat increases based on stat type
     switch (statType) {
       case 'strength':
-        newStats = newStats.copyWith(str: newStats.str.copyWith(level: newStats.str.level + statIncrease));
+        newStats = newStats.copyWith(str: newStats.str + statIncrease);
         break;
       case 'intelligence':
-        newStats = newStats.copyWith(intl: newStats.intl.copyWith(level: newStats.intl.level + statIncrease));
+        newStats = newStats.copyWith(intl: newStats.intl + statIncrease);
         break;
       case 'willpower':
-        newStats = newStats.copyWith(wil: newStats.wil.copyWith(level: newStats.wil.level + statIncrease));
+        newStats = newStats.copyWith(wil: newStats.wil + statIncrease);
         break;
       case 'speed':
-        newStats = newStats.copyWith(spd: newStats.spd.copyWith(level: newStats.spd.level + statIncrease));
+        newStats = newStats.copyWith(spd: newStats.spd + statIncrease);
         break;
+      case 'ninjutsu_offense':
       case 'ninjutsu':
-        newStats = newStats.copyWith(nin: newStats.nin.copyWith(level: newStats.nin.level + statIncrease));
+        newStats = newStats.copyWith(nin: newStats.nin + statIncrease);
         break;
+      case 'genjutsu_offense':
       case 'genjutsu':
-        newStats = newStats.copyWith(gen: newStats.gen.copyWith(level: newStats.gen.level + statIncrease));
+        newStats = newStats.copyWith(gen: newStats.gen + statIncrease);
         break;
+      case 'bukijutsu_offense':
       case 'bukijutsu':
-        newStats = newStats.copyWith(buk: newStats.buk.copyWith(level: newStats.buk.level + statIncrease));
+        newStats = newStats.copyWith(buk: newStats.buk + statIncrease);
         break;
+      case 'taijutsu_offense':
       case 'taijutsu':
-        newStats = newStats.copyWith(tai: newStats.tai.copyWith(level: newStats.tai.level + statIncrease));
+        newStats = newStats.copyWith(tai: newStats.tai + statIncrease);
+        break;
+      case 'ninjutsu_defense':
+        newStats = newStats.copyWith(nin: newStats.nin + statIncrease);
+        break;
+      case 'genjutsu_defense':
+        newStats = newStats.copyWith(gen: newStats.gen + statIncrease);
+        break;
+      case 'bukijutsu_defense':
+        newStats = newStats.copyWith(buk: newStats.buk + statIncrease);
+        break;
+      case 'taijutsu_defense':
+        newStats = newStats.copyWith(tai: newStats.tai + statIncrease);
         break;
     }
     
     // Debug: Print stats after training
     print('After training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
-    print('Base stats - STR: ${newStats.str.level}, WIL: ${newStats.wil.level}, INTL: ${newStats.intl.level}, SPD: ${newStats.spd.level}');
+    print('Base stats - STR: ${newStats.str}, WIL: ${newStats.wil}, INTL: ${newStats.intl}, SPD: ${newStats.spd}');
     
     ref.read(playerProvider.notifier).updateStats(newStats);
 
@@ -698,28 +827,44 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     String message = 'Training completed! ';
     switch (statType) {
       case 'strength':
-        message += 'Strength increased by +$statIncrease to ${newStats.str.level}!';
+        message += 'Strength increased by +$statIncrease to ${newStats.str}!';
         break;
       case 'intelligence':
-        message += 'Intelligence increased by +$statIncrease to ${newStats.intl.level}!';
+        message += 'Intelligence increased by +$statIncrease to ${newStats.intl}!';
         break;
       case 'willpower':
-        message += 'Willpower increased by +$statIncrease to ${newStats.wil.level}!';
+        message += 'Willpower increased by +$statIncrease to ${newStats.wil}!';
         break;
       case 'speed':
-        message += 'Speed increased by +$statIncrease to ${newStats.spd.level}!';
+        message += 'Speed increased by +$statIncrease to ${newStats.spd}!';
         break;
+      case 'ninjutsu_offense':
       case 'ninjutsu':
-        message += 'Ninjutsu increased by +$statIncrease to ${newStats.nin.level}!';
+        message += 'Ninjutsu increased by +$statIncrease to ${newStats.nin}!';
         break;
+      case 'genjutsu_offense':
       case 'genjutsu':
-        message += 'Genjutsu increased by +$statIncrease to ${newStats.gen.level}!';
+        message += 'Genjutsu increased by +$statIncrease to ${newStats.gen}!';
         break;
+      case 'bukijutsu_offense':
       case 'bukijutsu':
-        message += 'Bukijutsu increased by +$statIncrease to ${newStats.buk.level}!';
+        message += 'Bukijutsu increased by +$statIncrease to ${newStats.buk}!';
         break;
+      case 'taijutsu_offense':
       case 'taijutsu':
-        message += 'Taijutsu increased by +$statIncrease to ${newStats.tai.level}!';
+        message += 'Taijutsu increased by +$statIncrease to ${newStats.tai}!';
+        break;
+      case 'ninjutsu_defense':
+        message += 'Ninjutsu Defense increased by +$statIncrease to ${newStats.nin}!';
+        break;
+      case 'genjutsu_defense':
+        message += 'Genjutsu Defense increased by +$statIncrease to ${newStats.gen}!';
+        break;
+      case 'bukijutsu_defense':
+        message += 'Bukijutsu Defense increased by +$statIncrease to ${newStats.buk}!';
+        break;
+      case 'taijutsu_defense':
+        message += 'Taijutsu Defense increased by +$statIncrease to ${newStats.tai}!';
         break;
       default:
         message += '$statType increased by +$statIncrease!';
@@ -736,24 +881,112 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     return Column(
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: 70,
+          height: 70,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 2,
-            ),
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
           ),
           child: Center(
             child: Text(
-              value.toString(),
+              StatsUtils.formatWholeNumber(value),
               style: TextStyle(
                 color: color,
-                fontSize: 18,
+                fontSize: value >= 100000 ? 11 : 12,
                 fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          fullName,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.8),
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCombatStatDisplay(String label, int value, Color color, String fullName, PlayerStats allStats) {
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+          ),
+          child: Center(
+            child: Text(
+              StatsUtils.formatWholeNumber(value),
+              style: TextStyle(
+                color: color,
+                fontSize: value >= 100000 ? 11 : 12,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          fullName,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.8),
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDefenseStatDisplay(String label, int value, Color color, String fullName) {
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+          ),
+          child: Center(
+            child: Text(
+              StatsUtils.formatWholeNumber(value),
+              style: TextStyle(
+                color: color,
+                fontSize: value >= 100000 ? 11 : 12,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),

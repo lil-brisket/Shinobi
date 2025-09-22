@@ -17,14 +17,15 @@ class TrainableStat with _$TrainableStat {
 class PlayerStats with _$PlayerStats {
   const factory PlayerStats({
     required int level,
-    @Default(TrainableStat()) TrainableStat str,
-    @Default(TrainableStat()) TrainableStat intl,
-    @Default(TrainableStat()) TrainableStat spd,
-    @Default(TrainableStat()) TrainableStat wil,
-    @Default(TrainableStat()) TrainableStat nin,
-    @Default(TrainableStat()) TrainableStat gen,
-    @Default(TrainableStat()) TrainableStat buk,
-    @Default(TrainableStat()) TrainableStat tai,
+    // Raw stat values instead of TrainableStat objects
+    @Default(0) int str,
+    @Default(0) int intl,
+    @Default(0) int spd,
+    @Default(0) int wil,
+    @Default(0) int nin,
+    @Default(0) int gen,
+    @Default(0) int buk,
+    @Default(0) int tai,
     // Current resource values (for UI display)
     int? currentHP,
     int? currentSP,
@@ -36,9 +37,10 @@ class PlayerStats with _$PlayerStats {
 
 extension PlayerStatsExtension on PlayerStats {
   // Level-tied resources (auto-derived)
-  int get maxHP => (80 + 20 * level + 6 * str.level + 2 * wil.level);
-  int get maxSP => (60 + 12 * level + 4 * spd.level + 3 * wil.level);
-  int get maxCP => (60 + 15 * level + 6 * intl.level + 2 * wil.level);
+  // Base: 500, +100 per level
+  int get maxHP => (500 + 100 * level);
+  int get maxSP => (500 + 100 * level);
+  int get maxCP => (500 + 100 * level);
 
   // Current resource values (default to max if not set)
   int get hp => currentHP ?? maxHP;
@@ -52,79 +54,31 @@ extension PlayerStatsExtension on PlayerStats {
   int get stamina => sp;
   int get chakra => cp;
 
-  // Combat stats (derived from trainable stats)
-  int get attack => (str.level + nin.level + buk.level + tai.level) ~/ 2;
-  int get defense => (wil.level + spd.level) ~/ 2;
-  int get speed => spd.level;
+  // Combat stats (derived from raw stats)
+  int get attack => (str + nin + buk + tai) ~/ 2;
+  int get defense => (wil + spd) ~/ 2;
+  int get speed => spd;
 
   // Regeneration rates per minute
-  double get hpRegenPerMin => 0.2 * wil.level;
-  double get spRegenPerMin => 0.3 * spd.level + 0.1 * wil.level;
-  double get cpRegenPerMin => 0.35 * intl.level + 0.1 * wil.level;
+  double get hpRegenPerMin => 0.2 * wil;
+  double get spRegenPerMin => 0.3 * spd + 0.1 * wil;
+  double get cpRegenPerMin => 0.35 * intl + 0.1 * wil;
 
-  // XP calculation for next level
-  int xpToNext(TrainableStat stat) {
-    final L = stat.level;
-    return (50 + 10 * L + 2 * (L * L));
-  }
-
-  // Soft cap calculation
-  int softCap() => 10 + 2 * level;
-
-  // Apply training XP with soft cap and fatigue modifiers
-  PlayerStats applyTrainingXP(TrainableStat stat, int rawXP, {double fatigue = 1.0}) {
-    final overCap = stat.level > softCap();
-    final capMult = overCap ? 0.5 : 1.0;
-    int gained = (rawXP * capMult * fatigue).round();
-    
-    int newXp = stat.xp + gained;
-    int newLevel = stat.level;
-    
-    while (newXp >= xpToNext(TrainableStat(level: newLevel, xp: 0))) {
-      newXp -= xpToNext(TrainableStat(level: newLevel, xp: 0));
-      newLevel += 1;
-    }
-    
-    // Update the specific stat
-    TrainableStat updatedStat = stat.copyWith(level: newLevel, xp: newXp);
-    
-    // Debug: Print the stat update
-    print('Training XP applied: ${stat.level} -> ${updatedStat.level} (XP: ${stat.xp} -> ${updatedStat.xp})');
-    
-    // Return updated PlayerStats with the modified stat
-    if (stat == str) {
-      return copyWith(str: updatedStat);
-    } else if (stat == intl) {
-      return copyWith(intl: updatedStat);
-    } else if (stat == spd) {
-      return copyWith(spd: updatedStat);
-    } else if (stat == wil) {
-      return copyWith(wil: updatedStat);
-    } else if (stat == nin) {
-      return copyWith(nin: updatedStat);
-    } else if (stat == gen) {
-      return copyWith(gen: updatedStat);
-    } else if (stat == buk) {
-      return copyWith(buk: updatedStat);
-    } else if (stat == tai) {
-      return copyWith(tai: updatedStat);
-    }
-    
-    return this;
-  }
+  // Soft cap calculation (now based on raw stat values)
+  int softCap() => 10000 + 2000 * level;
 
   // Damage calculation methods
   double damageNinjutsu(double base) =>
-      base * (1 + nin.level / 100.0) * (1 + intl.level / 120.0);
+      base * (1 + nin / 1000.0) * (1 + intl / 1200.0);
 
   double damageGenjutsu(double base) =>
-      base * (1 + gen.level / 100.0) * (1 + wil.level / 120.0);
+      base * (1 + gen / 1000.0) * (1 + wil / 1200.0);
 
   double damageBukijutsu(double base) =>
-      base * (1 + buk.level / 100.0) * (1 + str.level / 120.0);
+      base * (1 + buk / 1000.0) * (1 + str / 1200.0);
 
   double damageTaijutsu(double base) =>
-      base * (1 + tai.level / 100.0) * (1 + spd.level / 120.0);
+      base * (1 + tai / 1000.0) * (1 + spd / 1200.0);
 
   // Resource management methods
   PlayerStats updateHP(int newHP) {
@@ -157,5 +111,33 @@ extension PlayerStatsExtension on PlayerStats {
       currentSP: maxSP,
       currentCP: maxCP,
     );
+  }
+
+  // Rank system
+  String get rank {
+    if (level >= 1 && level <= 10) return 'Student';
+    if (level >= 11 && level <= 20) return 'Genin';
+    if (level >= 21 && level <= 50) return 'Chunin';
+    if (level >= 51 && level <= 80) return 'Jounin';
+    if (level >= 81 && level <= 100) return 'Elite Jounin';
+    return 'Student';
+  }
+
+  // Rank color for UI
+  String get rankColor {
+    switch (rank) {
+      case 'Student':
+        return 'grey';
+      case 'Genin':
+        return 'green';
+      case 'Chunin':
+        return 'blue';
+      case 'Jounin':
+        return 'purple';
+      case 'Elite Jounin':
+        return 'amber';
+      default:
+        return 'grey';
+    }
   }
 }
