@@ -153,28 +153,74 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   Widget _buildBattleScreen() {
     final battleState = ref.watch(battleProvider);
     
-    return Column(
+    return Row(
       children: [
-        // Main battle area
+        // Main battle area - expanded to take most space
         Expanded(
           flex: 3,
-          child: BattleGrid(showDebugCoords: _showDebugCoords),
-        ),
-        
-        // Enhanced battle log
-        Expanded(
-          flex: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: EnhancedBattleLog(
-              log: battleState.log,
-              rounds: battleState.rounds,
-            ),
+          child: Column(
+            children: [
+              Expanded(
+                child: BattleGrid(showDebugCoords: _showDebugCoords),
+              ),
+              
+              // Collapsible battle log
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: BattleLogPanel(
+                  log: battleState.log,
+                  rounds: battleState.rounds,
+                ),
+              ),
+              
+              // Action panel with HUD and buttons
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ActionPanel(),
+              ),
+            ],
           ),
         ),
         
-        // Action panel
-        ActionPanel(),
+        // Enemy status panel
+        if (battleState.livingEnemies.isNotEmpty)
+          Expanded(
+            flex: 1,
+            child: Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Enemies',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: battleState.livingEnemies.length,
+                      itemBuilder: (context, index) {
+                        final enemy = battleState.livingEnemies[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: EntityStatus(entityId: enemy.id),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }

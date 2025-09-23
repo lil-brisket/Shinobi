@@ -297,6 +297,12 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
+    // Check and spend AP
+    if (!_spendAP(activeEntity, BalanceConfig.costPunch)) {
+      _addLog('Not enough AP to punch! (Need ${BalanceConfig.costPunch} AP)');
+      return;
+    }
+
     // Calculate damage using new formula with curves and mitigation
     final damage = BattleFormulas.calcDamage(
       attacker: activeEntity,
@@ -354,6 +360,12 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
+    // Check and spend AP
+    if (!_spendAP(activeEntity, BalanceConfig.costHeal)) {
+      _addLog('Not enough AP to heal! (Need ${BalanceConfig.costHeal} AP)');
+      return;
+    }
+
     // Calculate heal amount using new formula
     final healAmount = BattleFormulas.calcHeal(
       caster: activeEntity,
@@ -386,6 +398,12 @@ class BattleController extends StateNotifier<BattleState> {
     
     final activeEntity = state.activeEntity;
     if (activeEntity == null) return;
+
+    // Check and spend AP
+    if (!_spendAP(activeEntity, BalanceConfig.costFlee)) {
+      _addLog('Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
+      return;
+    }
 
     // Calculate flee chance using new formula
     final fleeChance = BattleFormulas.calcFleeChance(
@@ -490,6 +508,12 @@ class BattleController extends StateNotifier<BattleState> {
       activeEntityId: nextEntityId,
     );
 
+    // Refresh AP for the new active entity
+    final newActiveEntity = state.activeEntity;
+    if (newActiveEntity != null) {
+      _refreshAPFor(newActiveEntity);
+    }
+
     _addLog("${state.activeEntity?.name}'s turn");
 
     // Auto-play enemy turns
@@ -510,7 +534,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (livingEnemies <= livingPlayers - 2) {
       final random = Random(state.rngSeed + state.log.length);
       if (random.nextDouble() < 0.05) {
-        actFlee();
+        _actFleeInternal(enemy);
         return;
       }
     }
@@ -523,7 +547,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (adjacentPlayers.isNotEmpty) {
       // Find weakest adjacent player
       final weakest = adjacentPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
-      actPunch(weakest.id);
+      _actPunchInternal(enemy, weakest.id);
       return;
     }
 
@@ -542,7 +566,7 @@ class BattleController extends StateNotifier<BattleState> {
       
       if (newAdjacentPlayers.isNotEmpty) {
         final weakest = newAdjacentPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
-        actPunch(weakest.id);
+        _actPunchInternal(updatedEnemy, weakest.id);
         return;
       }
     }
@@ -674,6 +698,12 @@ class BattleController extends StateNotifier<BattleState> {
 
     // Check if tile is empty
     if (!state.tiles[row][col].isEmpty) {
+      return;
+    }
+
+    // Check and spend AP
+    if (!_spendAP(activeEntity, BalanceConfig.costMove)) {
+      _addLog('Not enough AP to move! (Need ${BalanceConfig.costMove} AP)');
       return;
     }
 
@@ -864,6 +894,147 @@ class BattleController extends StateNotifier<BattleState> {
     final newLog = List<String>.from(state.log)..add(message);
     state = state.copyWith(log: newLog);
   }
+
+  /// Refresh AP for an entity at the start of their turn
+  void _refreshAPFor(Entity e) {
+    final refreshed = e.copyWith(ap: e.apMax);
+    _updateEntity(refreshed);
+    
+    // Log AP refresh
+    _recordEntry(BattleLogEntry(
+      ts: DateTime.now(),
+      round: state.roundNumber,
+      turnIndex: state.turnIndexInRound,
+      actorId: e.id,
+      action: BattleAction.endTurn, // Using endTurn as a generic action for AP refresh
+      message: '${e.name}\'s AP refreshed to ${e.apMax}',
+    ));
+  }
+
+  /// Spend AP for an action, returns false if insufficient AP
+  bool _spendAP(Entity e, int cost) {
+    if (e.ap < cost) return false;
+    final updated = e.copyWith(ap: e.ap - cost);
+    _updateEntity(updated);
+    
+    // Log AP spending
+    _recordEntry(BattleLogEntry(
+      ts: DateTime.now(),
+      round: state.roundNumber,
+      turnIndex: state.turnIndexInRound,
+      actorId: e.id,
+      action: BattleAction.endTurn, // Using endTurn as a generic action for AP spending
+      message: '${e.name} spent $cost AP (AP left: ${updated.ap}/${updated.apMax})',
+    ));
+    
+    return true;
+  }
+
+  /// Internal punch action for AI (no player turn restriction)
+  void _actPunchInternal(Entity actor, String targetId) {
+    final target = state.allEntities.firstWhere((e) => e.id == targetId);
+    
+    if (!target.alive) return;
+
+    // Check if target is adjacent
+    if (!_isAdjacent(actor.pos, target.pos)) {
+      _addLog(BattleStrings.noAdjacentTargets);
+      return;
+    }
+
+    // Check and spend AP
+    if (!_spendAP(actor, BalanceConfig.costPunch)) {
+      _addLog('Not enough AP to punch! (Need ${BalanceConfig.costPunch} AP)');
+      return;
+    }
+
+    // Calculate damage using new formula with curves and mitigation
+    final damage = BattleFormulas.calcDamage(
+      attacker: actor,
+      defender: target,
+      rngIntInclusive: _rngIntInclusive,
+      rngRollUnder: _rngRollUnder,
+    );
+    
+    final newHp = max(0, target.hp - damage);
+    final updatedTarget = target.copyWith(hp: newHp);
+    
+    _updateEntity(updatedTarget);
+    
+    // Record punch action
+    _recordEntry(BattleLogEntry(
+      ts: DateTime.now(),
+      round: state.roundNumber,
+      turnIndex: state.turnIndexInRound,
+      actorId: actor.id,
+      action: BattleAction.punch,
+      targetId: target.id,
+      damage: damage,
+      message: '${actor.name} punched ${target.name} for $damage damage!',
+    ));
+
+    // Check if target died
+    if (!updatedTarget.alive) {
+      _removeEntityFromTile(updatedTarget);
+      
+      // Record defeat
+      _recordEntry(BattleLogEntry(
+        ts: DateTime.now(),
+        round: state.roundNumber,
+        turnIndex: state.turnIndexInRound,
+        actorId: actor.id,
+        action: BattleAction.punch,
+        targetId: target.id,
+        message: '${target.name} was defeated!',
+      ));
+    }
+
+    _endTurn();
+  }
+
+  /// Internal flee action for AI (no player turn restriction)
+  void _actFleeInternal(Entity actor) {
+    // Check and spend AP
+    if (!_spendAP(actor, BalanceConfig.costFlee)) {
+      _addLog('Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
+      return;
+    }
+
+    // Calculate flee chance using new formula
+    final fleeChance = BattleFormulas.calcFleeChance(
+      fleeEntity: actor,
+      enemies: state.livingEnemies,
+    );
+    
+    final success = _rngRollUnder(fleeChance);
+
+    if (success) {
+      // Record successful flee
+      _recordEntry(BattleLogEntry(
+        ts: DateTime.now(),
+        round: state.roundNumber,
+        turnIndex: state.turnIndexInRound,
+        actorId: actor.id,
+        action: BattleAction.flee,
+        message: '${actor.name} successfully fled!',
+      ));
+      
+      state = state.copyWith(phase: BattlePhase.ended);
+      _endCurrentRound(); // Close the current round
+    } else {
+      // Record failed flee
+      _recordEntry(BattleLogEntry(
+        ts: DateTime.now(),
+        round: state.roundNumber,
+        turnIndex: state.turnIndexInRound,
+        actorId: actor.id,
+        action: BattleAction.flee,
+        message: '${actor.name} failed to flee!',
+      ));
+      
+      _endTurn();
+    }
+  }
 }
 
 /// Provider for battle controller
@@ -889,6 +1060,8 @@ final battleConfigProvider = Provider<BattleConfig>((ref) {
     spd: 7,
     intStat: 5,
     wil: 4,
+    ap: BalanceConfig.defaultAPMax,
+    apMax: BalanceConfig.defaultAPMax,
   );
 
   final enemies = [
@@ -907,6 +1080,8 @@ final battleConfigProvider = Provider<BattleConfig>((ref) {
       spd: 5,
       intStat: 0,
       wil: 3,
+      ap: BalanceConfig.defaultAPMax,
+      apMax: BalanceConfig.defaultAPMax,
     ),
     Entity(
       id: 'E2',
@@ -923,6 +1098,8 @@ final battleConfigProvider = Provider<BattleConfig>((ref) {
       spd: 4,
       intStat: 0,
       wil: 2,
+      ap: BalanceConfig.defaultAPMax,
+      apMax: BalanceConfig.defaultAPMax,
     ),
   ];
 

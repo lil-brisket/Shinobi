@@ -62,6 +62,8 @@ void main() {
         spd: 7,
         intStat: 5,
         wil: 4,
+        ap: 100,
+        apMax: 100,
       );
 
       final defender = Entity(
@@ -79,6 +81,8 @@ void main() {
         spd: 5,
         intStat: 0,
         wil: 10000, // High willpower for mitigation
+        ap: 100,
+        apMax: 100,
       );
 
       final damage = BattleFormulas.calcDamage(
@@ -119,6 +123,8 @@ void main() {
         spd: 7,
         intStat: 25000, // High intelligence
         wil: 4,
+        ap: 100,
+        apMax: 100,
       );
 
       final healAmount = BattleFormulas.calcHeal(
@@ -146,6 +152,8 @@ void main() {
         spd: 50000, // Very high speed
         intStat: 5,
         wil: 4,
+        ap: 100,
+        apMax: 100,
       );
 
       final slowEnemies = [
@@ -164,6 +172,8 @@ void main() {
           spd: 1000, // Low speed
           intStat: 0,
           wil: 4,
+          ap: 100,
+          apMax: 100,
         ),
       ];
 
@@ -194,6 +204,8 @@ void main() {
           spd: 1000, // Low speed
           intStat: 0,
           wil: 4,
+          ap: 100,
+          apMax: 100,
         ),
         Entity(
           id: 'E2',
@@ -210,6 +222,8 @@ void main() {
           spd: 50000, // High speed
           intStat: 5,
           wil: 4,
+          ap: 100,
+          apMax: 100,
         ),
         Entity(
           id: 'E3',
@@ -226,6 +240,8 @@ void main() {
           spd: 10000, // Medium speed
           intStat: 0,
           wil: 4,
+          ap: 100,
+          apMax: 100,
         ),
       ];
 
@@ -254,6 +270,8 @@ void main() {
         spd: 7,
         intStat: 5,
         wil: 4,
+        ap: 100,
+        apMax: 100,
       );
 
       final defender = Entity(
@@ -271,6 +289,8 @@ void main() {
         spd: 5,
         intStat: 0,
         wil: 1000, // Low willpower
+        ap: 100,
+        apMax: 100,
       );
 
       final range = BattleFormulas.getDamageRange(
@@ -299,6 +319,8 @@ void main() {
         spd: 7,
         intStat: 10000,
         wil: 4,
+        ap: 100,
+        apMax: 100,
       );
 
       final range = BattleFormulas.getHealRange(caster);
@@ -323,6 +345,8 @@ void main() {
         spd: 8000,
         intStat: 12000,
         wil: 9000,
+        ap: 100,
+        apMax: 100,
       );
 
       final debugStats = BattleFormulas.debugStats(entity);
@@ -353,6 +377,8 @@ void main() {
         spd: 1,
         intStat: 1,
         wil: 1,
+        ap: 100,
+        apMax: 100,
       );
 
       // Should still provide minimum damage (with variance)

@@ -150,6 +150,10 @@ class Entity {
   final int spd;
   final int intStat;
   final int wil; // Willpower for damage mitigation
+  
+  // Action Point system
+  final int ap;       // current action points
+  final int apMax;    // usually 100, can scale with buffs/debuffs
 
   const Entity({
     required this.id,
@@ -166,6 +170,8 @@ class Entity {
     required this.spd,
     required this.intStat,
     required this.wil,
+    required this.ap,
+    required this.apMax,
   });
 
   /// Derived getter for alive status
@@ -187,6 +193,8 @@ class Entity {
     int? spd,
     int? intStat,
     int? wil,
+    int? ap,
+    int? apMax,
   }) {
     return Entity(
       id: id ?? this.id,
@@ -203,11 +211,13 @@ class Entity {
       spd: spd ?? this.spd,
       intStat: intStat ?? this.intStat,
       wil: wil ?? this.wil,
+      ap: ap ?? this.ap,
+      apMax: apMax ?? this.apMax,
     );
   }
 
   @override
-  String toString() => 'Entity($id: $name, HP: $hp/$hpMax, CP: $cp/$cpMax, Pos: $pos)';
+  String toString() => 'Entity($id: $name, HP: $hp/$hpMax, CP: $cp/$cpMax, AP: $ap/$apMax, Pos: $pos)';
 }
 
 /// Tile class representing a single grid cell

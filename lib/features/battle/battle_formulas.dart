@@ -40,6 +40,13 @@ class BalanceConfig {
   // Costs
   static const int healCpCost = 10;
 
+  // Action Point system
+  static const int defaultAPMax = 100;
+  static const int costMove = 20;
+  static const int costPunch = 20;
+  static const int costHeal = 20;
+  static const int costFlee = 30;
+
   // Safety clamps
   static const int minDamage = 1;
   static const int minHeal = 5;

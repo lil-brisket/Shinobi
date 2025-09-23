@@ -35,6 +35,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [
@@ -53,6 +55,8 @@ void main() {
             spd: 5,
             intStat: 0,
             wil: 2,
+            ap: 100,
+            apMax: 100,
           ),
         ],
       );
@@ -88,6 +92,8 @@ void main() {
             spd: 10, // Highest speed
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [
@@ -106,6 +112,8 @@ void main() {
             spd: 5, // Lower speed
             intStat: 0,
             wil: 2,
+            ap: 100,
+            apMax: 100,
           ),
         ],
       );
@@ -135,6 +143,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [],
@@ -165,6 +175,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [
@@ -183,6 +195,8 @@ void main() {
             spd: 5,
             intStat: 0,
             wil: 2,
+            ap: 100,
+            apMax: 100,
           ),
           Entity(
             id: 'E2',
@@ -199,6 +213,8 @@ void main() {
             spd: 4,
             intStat: 0,
             wil: 2,
+            ap: 100,
+            apMax: 100,
           ),
         ],
       );
@@ -228,6 +244,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [],
@@ -263,6 +281,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [],
@@ -298,6 +318,8 @@ void main() {
             spd: 7,
             intStat: 5,
             wil: 4,
+            ap: 100,
+            apMax: 100,
           ),
         ],
         enemies: [
@@ -316,6 +338,8 @@ void main() {
             spd: 5,
             intStat: 0,
             wil: 2,
+            ap: 100,
+            apMax: 100,
           ),
         ],
       );

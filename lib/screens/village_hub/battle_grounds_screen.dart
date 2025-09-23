@@ -382,6 +382,8 @@ class BattleGroundsScreen extends ConsumerWidget {
       spd: 7,
       intStat: 5,
       wil: 4,
+      ap: 100,
+      apMax: 100,
     );
 
     // Create enemy based on the selected challenge
@@ -414,6 +416,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 5,
           intStat: 0,
           wil: 2,
+          ap: 100,
+          apMax: 100,
         );
       case 'Rogue Ninja':
         return Entity(
@@ -431,6 +435,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 10,
           intStat: 0,
           wil: 3,
+          ap: 100,
+          apMax: 100,
         );
       case 'Elite Guard':
         return Entity(
@@ -448,6 +454,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 6,
           intStat: 0,
           wil: 8,
+          ap: 100,
+          apMax: 100,
         );
       case 'Dark Ninja':
         return Entity(
@@ -465,6 +473,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 14,
           intStat: 0,
           wil: 5,
+          ap: 100,
+          apMax: 100,
         );
       case 'Legendary Warrior':
         return Entity(
@@ -482,6 +492,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 8,
           intStat: 0,
           wil: 12,
+          ap: 100,
+          apMax: 100,
         );
       default:
         // Default enemy
@@ -500,6 +512,8 @@ class BattleGroundsScreen extends ConsumerWidget {
           spd: 5,
           intStat: 0,
           wil: 3,
+          ap: 100,
+          apMax: 100,
         );
     }
   }
