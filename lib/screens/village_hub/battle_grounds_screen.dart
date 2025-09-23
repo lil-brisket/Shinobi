@@ -350,12 +350,21 @@ class BattleGroundsScreen extends ConsumerWidget {
   }
 
   void _startBattle(BuildContext context, String enemyName) {
-    // Create battle configuration based on enemy
-    final battleConfig = _createBattleConfig(enemyName);
+    // Get the battle configuration from the provider (which uses actual player data)
+    final battleConfig = ProviderScope.containerOf(context).read(battleConfigProvider);
+    
+    // Create a custom config with the selected enemy
+    final customConfig = BattleConfig(
+      players: battleConfig.players,
+      enemies: [_createEnemy(enemyName)],
+      rows: battleConfig.rows,
+      cols: battleConfig.cols,
+      rngSeed: DateTime.now().millisecondsSinceEpoch % 1000,
+    );
     
     // Start the battle with the configuration
     final battleController = ProviderScope.containerOf(context).read(battleProvider.notifier);
-    battleController.startBattle(battleConfig);
+    battleController.startBattle(customConfig);
     
     // Navigate to battle screen
     Navigator.of(context).push(

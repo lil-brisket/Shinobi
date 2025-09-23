@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_formulas.dart';
+import '../../controllers/providers.dart';
 
 /// Battle controller managing game state and logic
 class BattleController extends StateNotifier<BattleState> {
@@ -707,7 +708,11 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
-    _moveEntity(activeEntity, Position(row: row, col: col));
+    // Get the updated entity after spending AP
+    final updatedEntity = state.activeEntity;
+    if (updatedEntity == null) return;
+
+    _moveEntity(updatedEntity, Position(row: row, col: col));
     _clearHighlights();
     
     state = state.copyWith(
@@ -1044,22 +1049,30 @@ final battleProvider = StateNotifierProvider<BattleController, BattleState>((ref
 
 /// Provider for battle configuration
 final battleConfigProvider = Provider<BattleConfig>((ref) {
-  // Sample seed data
+  // Get actual player data from the player provider
+  final playerData = ref.watch(playerProvider);
+  
+  // Calculate level-based default values
+  final level = playerData.stats.level;
+  final defaultHP = 500 + (level * 100); // Base 500 + 100 per level
+  final defaultCP = 500 + (level * 100); // Base 500 + 100 per level  
+  final defaultSP = 500 + (level * 100); // Base 500 + 100 per level
+  
   final player = Entity(
     id: 'P1',
-    name: 'You',
+    name: playerData.name,
     isPlayerControlled: true,
     pos: const Position(row: 2, col: 2),
-    hp: 100,
-    hpMax: 100,
-    cp: 30,
-    cpMax: 30,
-    sp: 50,
-    spMax: 50,
-    str: 6,
-    spd: 7,
-    intStat: 5,
-    wil: 4,
+    hp: playerData.stats.currentHP ?? defaultHP,
+    hpMax: playerData.stats.currentHP ?? defaultHP, // Assuming current values are max for now
+    cp: playerData.stats.currentCP ?? defaultCP,
+    cpMax: playerData.stats.currentCP ?? defaultCP, // Assuming current values are max for now
+    sp: playerData.stats.currentSP ?? defaultSP,
+    spMax: playerData.stats.currentSP ?? defaultSP, // Assuming current values are max for now
+    str: playerData.stats.str,
+    spd: playerData.stats.spd,
+    intStat: playerData.stats.intl,
+    wil: playerData.stats.wil,
     ap: BalanceConfig.defaultAPMax,
     apMax: BalanceConfig.defaultAPMax,
   );

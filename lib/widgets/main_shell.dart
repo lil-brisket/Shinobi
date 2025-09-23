@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../controllers/providers.dart';
+import '../features/battle/battle_controller.dart';
 
 class MainShell extends ConsumerWidget {
   final Widget child;
@@ -15,10 +16,16 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadChatCount = ref.watch(unreadChatCountProvider);
     final finishedTimersCount = ref.watch(finishedTimersCountProvider);
+    final battleState = ref.watch(battleProvider);
+    
+    // Check if battle is active (has players/enemies and not ended)
+    final isBattleActive = battleState.players.isNotEmpty && 
+                          battleState.enemies.isNotEmpty && 
+                          !battleState.isBattleEnded;
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isBattleActive ? null : BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _getCurrentIndex(context),
         onTap: (index) => _onTap(context, index),

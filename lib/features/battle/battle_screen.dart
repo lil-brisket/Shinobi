@@ -28,12 +28,28 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final battleState = ref.watch(battleProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(BattleStrings.battleTitle),
-        backgroundColor: theme.primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
+    // Check if battle is active (has players/enemies and not ended)
+    final isBattleActive = battleState.players.isNotEmpty && 
+                          battleState.enemies.isNotEmpty && 
+                          !battleState.isBattleEnded;
+
+    return PopScope(
+      canPop: !isBattleActive, // Prevent back navigation during active battle
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        
+        // Show confirmation dialog if trying to leave during active battle
+        if (isBattleActive) {
+          _showExitConfirmationDialog(context);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(BattleStrings.battleTitle),
+          backgroundColor: theme.primaryColor,
+          foregroundColor: Colors.white,
+          automaticallyImplyLeading: !isBattleActive, // Hide back button during active battle
+          actions: [
           // Turn indicator with debug info
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -85,6 +101,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ],
       ),
       body: _buildBattleContent(battleState),
+    ),
     );
   }
 
@@ -222,6 +239,35 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  void _showExitConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Battle?'),
+        content: const Text(
+          'You are currently in an active battle. Leaving now will result in defeat. Are you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Stay in Battle'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Exit battle screen
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Leave Battle'),
+          ),
+        ],
+      ),
     );
   }
 
