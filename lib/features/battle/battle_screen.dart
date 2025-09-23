@@ -111,8 +111,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return _buildNoBattleScreen();
     }
     
+    // Show battle screen even when ended, but show popup
     if (battleState.isBattleEnded) {
-      return _buildEndGameScreen();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showBattleResultDialog(battleState);
+      });
     }
     
     return _buildBattleScreen();
@@ -271,8 +274,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-  Widget _buildEndGameScreen() {
-    final battleState = ref.watch(battleProvider);
+  void _showBattleResultDialog(BattleState battleState) {
     final theme = Theme.of(context);
     
     String result;
@@ -289,92 +291,130 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       resultIcon = Icons.celebration;
     }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        title: Row(
           children: [
-            Icon(
-              resultIcon,
-              size: 80,
-              color: resultColor,
-            ),
-            const SizedBox(height: 24),
+            Icon(resultIcon, color: resultColor),
+            const SizedBox(width: 12),
             Text(
               result,
-              style: theme.textTheme.headlineMedium?.copyWith(
+              style: theme.textTheme.headlineSmall?.copyWith(
                 color: resultColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Battle Summary',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Survivors
+            Text(
+              'Survivors:',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            ...battleState.livingEntities.map((entity) => Padding(
+              padding: const EdgeInsets.only(left: 8, top: 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: entity.isPlayerControlled ? Colors.blue : Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        entity.id.substring(0, 1),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${entity.name} (HP: ${entity.hp}/${entity.hpMax})',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            )),
+            
             const SizedBox(height: 16),
             
-            // Battle summary
+            // Battle stats
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.dividerColor),
+                color: theme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Battle Summary',
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    'Battle Stats',
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  
-                  // Survivors
+                  const SizedBox(height: 8),
                   Text(
-                    'Survivors:',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    'Rounds: ${battleState.roundNumber}',
+                    style: theme.textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 4),
-                  
-                  ...battleState.livingEntities.map((entity) => Padding(
-                    padding: const EdgeInsets.only(left: 8, top: 2),
-                    child: Row(
-                      children: [
-                        EntityChip(
-                          entity: entity,
-                          isActive: false,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${entity.name} (HP: ${entity.hp}/${entity.hpMax})',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  )),
+                  Text(
+                    'Total Actions: ${battleState.rounds.fold(0, (sum, round) => sum + round.summary.actionsCount)}',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ],
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Back to battle grounds button
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back to Battle Grounds'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Go back to battle grounds
+            },
+            child: Text(
+              'Back to Battle Grounds',
+              style: TextStyle(color: theme.primaryColor),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog only, stay on battle screen
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('View Battle Log'),
+          ),
+        ],
       ),
     );
   }

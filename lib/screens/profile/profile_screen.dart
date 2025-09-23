@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/stat_bar.dart';
@@ -13,6 +14,8 @@ import '../../utils/snackbar_utils.dart';
 import '../../models/stats.dart';
 import '../../models/village.dart';
 import '../../models/player.dart';
+import '../../controllers/battle_history_provider.dart';
+import '../../models/battle_history.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -78,6 +81,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                 // Medical Ninja Profession Card
                 _buildMedicalNinjaCard(context, player),
+                const SizedBox(height: 24),
+
+                // Battle History Card
+                _buildBattleHistoryCard(context),
                 const SizedBox(height: 24),
 
                 // Village Change Button (only for Chunin rank and above)
@@ -721,6 +728,519 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               'Confirm',
               style: TextStyle(color: AppTheme.accentColor, fontWeight: FontWeight.bold),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Battle History Card
+  Widget _buildBattleHistoryCard(BuildContext context) {
+    final battleHistoryAsync = ref.watch(battleHistoryNotifierProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: const Icon(
+                  Icons.history,
+                  color: Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Battle History',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Recent battles and results',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => ref.read(battleHistoryNotifierProvider.notifier).refresh(),
+                icon: const Icon(Icons.refresh, color: Colors.white70),
+                tooltip: 'Refresh Battle History',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Battle History Content
+          battleHistoryAsync.when(
+            data: (history) => _buildBattleHistoryList(history),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (error, stack) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Failed to load battle history',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref.read(battleHistoryNotifierProvider.notifier).refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBattleHistoryList(List<BattleHistoryEntry> history) {
+    if (history.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Icon(Icons.sports_martial_arts, color: Colors.white54, size: 48),
+              const SizedBox(height: 8),
+              const Text(
+                'No battles recorded yet',
+                style: TextStyle(color: Colors.white54),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Start fighting to see your battle history here!',
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Show up to 5 recent battles
+        ...history.take(5).map((battle) => _buildBattleHistoryItem(battle)),
+        
+        if (history.length > 5) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => _showAllBattleHistory(history),
+            child: Text(
+              'View All ${history.length} Battles',
+              style: const TextStyle(color: AppTheme.accentColor),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBattleHistoryItem(BattleHistoryEntry battle) {
+    final resultColor = _getResultColor(battle.result);
+    final resultIcon = _getResultIcon(battle.result);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          // Result icon
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: resultColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(resultIcon, color: resultColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          
+          // Battle info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      battle.result.toUpperCase(),
+                      style: TextStyle(
+                        color: resultColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatBattleDate(battle.battleDate),
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${battle.rounds} rounds • ${battle.totalActions} actions',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                  ),
+                ),
+                if (battle.totalDamage > 0 || battle.totalHealing > 0) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${battle.totalDamage > 0 ? '${battle.totalDamage} dmg' : ''}${battle.totalDamage > 0 && battle.totalHealing > 0 ? ' • ' : ''}${battle.totalHealing > 0 ? '${battle.totalHealing} heal' : ''}',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // View details button
+          IconButton(
+            onPressed: () => _showBattleDetails(battle),
+            icon: const Icon(Icons.visibility, color: Colors.white54, size: 18),
+            tooltip: 'View Battle Details',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getResultColor(String result) {
+    switch (result.toLowerCase()) {
+      case 'victory':
+        return Colors.green;
+      case 'defeat':
+        return Colors.red;
+      case 'fled':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getResultIcon(String result) {
+    switch (result.toLowerCase()) {
+      case 'victory':
+        return Icons.celebration;
+      case 'defeat':
+        return Icons.sentiment_very_dissatisfied;
+      case 'fled':
+        return Icons.directions_run;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  String _formatBattleDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  void _showAllBattleHistory(List<BattleHistoryEntry> history) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: const Text(
+          'All Battle History',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: ListView.builder(
+            itemCount: history.length,
+            itemBuilder: (context, index) {
+              final battle = history[index];
+              return _buildBattleHistoryItem(battle);
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _confirmClearHistory();
+            },
+            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBattleDetails(BattleHistoryEntry battle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: Row(
+          children: [
+            Icon(_getResultIcon(battle.result), color: _getResultColor(battle.result)),
+            const SizedBox(width: 8),
+            Text(
+              'Battle Details',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 500,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Battle Summary
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Result: ${battle.result.toUpperCase()}',
+                      style: TextStyle(
+                        color: _getResultColor(battle.result),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Date: ${_formatBattleDate(battle.battleDate)}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      'Rounds: ${battle.rounds} • Actions: ${battle.totalActions}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      'Damage: ${battle.totalDamage} • Healing: ${battle.totalHealing}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Battle Log Header
+              Row(
+                children: [
+                  const Text(
+                    'Battle Log',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => _copyBattleLog(battle),
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copy'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.accentColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // Battle Log Content
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: ListView.builder(
+                    itemCount: battle.formattedBattleLog.length,
+                    itemBuilder: (context, index) {
+                      final logEntry = battle.formattedBattleLog[index];
+                      
+                      // Style round headers differently
+                      if (logEntry.startsWith('===')) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            logEntry,
+                            style: const TextStyle(
+                              color: AppTheme.accentColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      // Style empty lines
+                      if (logEntry.isEmpty) {
+                        return const SizedBox(height: 8);
+                      }
+                      
+                      // Style regular log entries
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 1),
+                        child: Text(
+                          logEntry,
+                          style: TextStyle(
+                            color: _getLogEntryColor(logEntry),
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getLogEntryColor(String logEntry) {
+    if (logEntry.contains('defeated') || logEntry.contains('was defeated')) {
+      return Colors.red;
+    } else if (logEntry.contains('healed') || logEntry.contains('healing')) {
+      return Colors.green;
+    } else if (logEntry.contains('punched') || logEntry.contains('damage')) {
+      return Colors.orange;
+    } else if (logEntry.contains('moved')) {
+      return Colors.blue;
+    } else if (logEntry.contains('fled')) {
+      return Colors.purple;
+    } else if (logEntry.contains('Round') && logEntry.contains('begins')) {
+      return Colors.cyan;
+    } else if (logEntry.contains('Round') && logEntry.contains('ends')) {
+      return Colors.cyan;
+    } else {
+      return Colors.white70;
+    }
+  }
+
+  void _copyBattleLog(BattleHistoryEntry battle) {
+    final logText = battle.formattedBattleLog.join('\n');
+    
+    // Copy to clipboard
+    Clipboard.setData(ClipboardData(text: logText));
+    
+    SnackbarUtils.showSuccess(
+      context,
+      'Battle log copied to clipboard!',
+    );
+  }
+
+  void _confirmClearHistory() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        title: const Text(
+          'Clear Battle History',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Are you sure you want to clear all battle history? This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(battleHistoryNotifierProvider.notifier).clearHistory();
+              SnackbarUtils.showSuccess(
+                context,
+                'Battle history cleared successfully!',
+              );
+            },
+            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

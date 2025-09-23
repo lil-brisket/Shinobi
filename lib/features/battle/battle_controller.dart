@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_formulas.dart';
 import '../../controllers/providers.dart';
+import '../../models/battle_history.dart';
 
 /// Battle controller managing game state and logic
 class BattleController extends StateNotifier<BattleState> {
@@ -892,6 +893,104 @@ class BattleController extends StateNotifier<BattleState> {
 
     state = state.copyWith(phase: BattlePhase.ended);
     _addLog(result);
+
+    // Save battle to history
+    _saveBattleToHistory(result);
+  }
+
+  /// Save battle to history
+  Future<void> _saveBattleToHistory(String result) async {
+    try {
+      final battleId = DateTime.now().millisecondsSinceEpoch.toString();
+      final battleDate = DateTime.now();
+      
+      // Convert battle state to JSON-serializable format
+      final battleStateData = {
+        'players': state.players.map((p) => _entityToJson(p)).toList(),
+        'enemies': state.enemies.map((e) => _entityToJson(e)).toList(),
+        'rounds': state.rounds.map((r) => _roundToJson(r)).toList(),
+        'roundNumber': state.roundNumber,
+        'log': state.log,
+        'rngSeed': state.rngSeed,
+      };
+
+      final battleEntry = BattleHistoryEntry.fromBattleState(
+        battleId,
+        battleDate,
+        result,
+        battleStateData,
+      );
+
+      await BattleHistoryService.saveBattle(battleEntry);
+    } catch (e) {
+      // Log error but don't crash the game
+      print('Failed to save battle history: $e');
+    }
+  }
+
+  /// Convert entity to JSON
+  Map<String, dynamic> _entityToJson(Entity entity) {
+    return {
+      'id': entity.id,
+      'name': entity.name,
+      'isPlayerControlled': entity.isPlayerControlled,
+      'pos': {'row': entity.pos.row, 'col': entity.pos.col},
+      'hp': entity.hp,
+      'hpMax': entity.hpMax,
+      'cp': entity.cp,
+      'cpMax': entity.cpMax,
+      'sp': entity.sp,
+      'spMax': entity.spMax,
+      'str': entity.str,
+      'spd': entity.spd,
+      'intStat': entity.intStat,
+      'wil': entity.wil,
+      'ap': entity.ap,
+      'apMax': entity.apMax,
+    };
+  }
+
+  /// Convert round to JSON
+  Map<String, dynamic> _roundToJson(RoundLog round) {
+    return {
+      'round': round.round,
+      'startedAt': round.startedAt.toIso8601String(),
+      'endedAt': round.endedAt?.toIso8601String(),
+      'entries': round.entries.map((e) => _entryToJson(e)).toList(),
+      'summary': _summaryToJson(round.summary),
+    };
+  }
+
+  /// Convert log entry to JSON
+  Map<String, dynamic> _entryToJson(BattleLogEntry entry) {
+    return {
+      'ts': entry.ts.toIso8601String(),
+      'round': entry.round,
+      'turnIndex': entry.turnIndex,
+      'actorId': entry.actorId,
+      'action': entry.action.name,
+      'message': entry.message,
+      'targetId': entry.targetId,
+      'damage': entry.damage,
+      'heal': entry.heal,
+      'fromPos': entry.fromPos != null 
+          ? {'row': entry.fromPos!.row, 'col': entry.fromPos!.col}
+          : null,
+      'toPos': entry.toPos != null 
+          ? {'row': entry.toPos!.row, 'col': entry.toPos!.col}
+          : null,
+    };
+  }
+
+  /// Convert summary to JSON
+  Map<String, dynamic> _summaryToJson(RoundSummary summary) {
+    return {
+      'round': summary.round,
+      'damageDoneByEntity': summary.damageDoneByEntity,
+      'healingDoneByEntity': summary.healingDoneByEntity,
+      'defeatedEntities': summary.defeatedEntities,
+      'actionsCount': summary.actionsCount,
+    };
   }
 
   /// Add message to battle log
