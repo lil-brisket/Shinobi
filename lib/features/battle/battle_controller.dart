@@ -33,7 +33,7 @@ class BattleController extends StateNotifier<BattleState> {
   }
 
   // RNG utilities for formulas
-  late Random _rand;
+  late math.Random _rand;
 
   int _rngIntInclusive(int min, int max) {
     final r = _rand.nextInt((max - min) + 1); // inclusive
@@ -184,7 +184,7 @@ class BattleController extends StateNotifier<BattleState> {
   /// Start a new battle with given configuration
   void startBattle(BattleConfig config) {
     // Initialize RNG with the battle seed
-    _rand = Random(config.rngSeed);
+    _rand = math.Random(config.rngSeed);
     
     final tiles = _createEmptyTiles(config.rows, config.cols);
     final allEntities = [...config.players, ...config.enemies];
@@ -358,7 +358,7 @@ class BattleController extends StateNotifier<BattleState> {
       rngRollUnder: _rngRollUnder,
     );
     
-    final newHp = max(0, target.hp - damage);
+    final newHp = math.max(0, target.hp - damage);
     final updatedTarget = target.copyWith(hp: newHp);
     
     _updateEntity(updatedTarget);
@@ -604,7 +604,7 @@ class BattleController extends StateNotifier<BattleState> {
     final livingEnemies = state.livingEnemies.length;
     
     if (livingEnemies <= livingPlayers - 2) {
-      final random = Random(state.rngSeed + state.log.length);
+      final random = math.Random(state.rngSeed + state.log.length);
       if (random.nextDouble() < 0.05) {
         _actFleeInternal(enemy);
         return;
@@ -1240,7 +1240,7 @@ class BattleController extends StateNotifier<BattleState> {
       rngRollUnder: _rngRollUnder,
     );
     
-    final newHp = max(0, target.hp - damage);
+    final newHp = math.max(0, target.hp - damage);
     final updatedTarget = target.copyWith(hp: newHp);
     
     _updateEntity(updatedTarget);
