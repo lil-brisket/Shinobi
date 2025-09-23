@@ -1,10 +1,10 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_formulas.dart';
 import '../../controllers/providers.dart';
 import '../../models/battle_history.dart';
+import '../../models/battle_costs.dart';
 
 /// Battle controller managing game state and logic
 class BattleController extends StateNotifier<BattleState> {
@@ -299,15 +299,19 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
-    // Check and spend AP
-    if (!_spendAP(activeEntity, BalanceConfig.costPunch)) {
-      _addLog('Not enough AP to punch! (Need ${BalanceConfig.costPunch} AP)');
+    // Check and spend resources
+    if (!activeEntity.canAfford(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp)) {
+      _addLog('❌ Not enough resources for Punch (need AP:${BattleCosts.punch.ap}, CP:${BattleCosts.punch.cp}, SP:${BattleCosts.punch.sp}).');
       return;
     }
+    
+    final updatedActiveEntity = activeEntity.spend(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp);
+    _updateEntity(updatedActiveEntity);
+    _addLog('− Spent AP:${BattleCosts.punch.ap} CP:${BattleCosts.punch.cp} SP:${BattleCosts.punch.sp} for Punch.');
 
     // Calculate damage using new formula with curves and mitigation
     final damage = BattleFormulas.calcDamage(
-      attacker: activeEntity,
+      attacker: updatedActiveEntity,
       defender: target,
       rngIntInclusive: _rngIntInclusive,
       rngRollUnder: _rngRollUnder,
@@ -323,11 +327,11 @@ class BattleController extends StateNotifier<BattleState> {
       ts: DateTime.now(),
       round: state.roundNumber,
       turnIndex: state.turnIndexInRound,
-      actorId: activeEntity.id,
+      actorId: updatedActiveEntity.id,
       action: BattleAction.punch,
       targetId: target.id,
       damage: damage,
-      message: '${activeEntity.name} punched ${target.name} for $damage damage!',
+      message: '👊 ${updatedActiveEntity.name} used Punch on ${target.name} for $damage damage!',
     ));
 
     // Check if target died
@@ -356,39 +360,28 @@ class BattleController extends StateNotifier<BattleState> {
     final activeEntity = state.activeEntity;
     if (activeEntity == null) return;
 
-    // Check CP cost
-    if (activeEntity.cp < BalanceConfig.healCpCost) {
-      _addLog(BattleStrings.notEnoughCp);
+    // Check and spend resources
+    if (!activeEntity.canAfford(BattleCosts.heal.ap, BattleCosts.heal.cp, BattleCosts.heal.sp)) {
+      _addLog('❌ Not enough resources for Heal (need AP:${BattleCosts.heal.ap}, CP:${BattleCosts.heal.cp}, SP:${BattleCosts.heal.sp}).');
       return;
     }
-
-    // Check and spend AP
-    if (!_spendAP(activeEntity, BalanceConfig.costHeal)) {
-      _addLog('Not enough AP to heal! (Need ${BalanceConfig.costHeal} AP)');
-      return;
-    }
-
-    // Calculate heal amount using new formula
-    final healAmount = BattleFormulas.calcHeal(
-      caster: activeEntity,
-      rngIntInclusive: _rngIntInclusive,
-    );
     
-    final newHp = min(activeEntity.hpMax, activeEntity.hp + healAmount);
-    final newCp = max(0, activeEntity.cp - BalanceConfig.healCpCost);
-    
-    final updatedEntity = activeEntity.copyWith(hp: newHp, cp: newCp);
-    _updateEntity(updatedEntity);
+    final updatedEntity = activeEntity.spend(BattleCosts.heal.ap, BattleCosts.heal.cp, BattleCosts.heal.sp);
+    _addLog('− Spent AP:${BattleCosts.heal.ap} CP:${BattleCosts.heal.cp} SP:${BattleCosts.heal.sp} for Heal.');
+
+    // Heal using fixed amount
+    final healedEntity = updatedEntity.heal(BattleCosts.healAmount);
+    _updateEntity(healedEntity);
     
     // Record heal action
     _recordEntry(BattleLogEntry(
       ts: DateTime.now(),
       round: state.roundNumber,
       turnIndex: state.turnIndexInRound,
-      actorId: activeEntity.id,
+      actorId: healedEntity.id,
       action: BattleAction.heal,
-      heal: healAmount,
-      message: '${activeEntity.name} healed for $healAmount HP!',
+      heal: BattleCosts.healAmount,
+      message: '✨ ${healedEntity.name} healed +${BattleCosts.healAmount} HP.',
     ));
     
     _endTurn();
@@ -401,15 +394,19 @@ class BattleController extends StateNotifier<BattleState> {
     final activeEntity = state.activeEntity;
     if (activeEntity == null) return;
 
-    // Check and spend AP
-    if (!_spendAP(activeEntity, BalanceConfig.costFlee)) {
-      _addLog('Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
+    // Check and spend AP (flee only costs AP)
+    if (activeEntity.ap < BalanceConfig.costFlee) {
+      _addLog('❌ Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
       return;
     }
+    
+    final updatedEntity = activeEntity.copyWith(ap: activeEntity.ap - BalanceConfig.costFlee);
+    _updateEntity(updatedEntity);
+    _addLog('− Spent AP:${BalanceConfig.costFlee} for Flee.');
 
     // Calculate flee chance using new formula
     final fleeChance = BattleFormulas.calcFleeChance(
-      fleeEntity: activeEntity,
+      fleeEntity: updatedEntity,
       enemies: state.livingEnemies,
     );
     
@@ -421,9 +418,9 @@ class BattleController extends StateNotifier<BattleState> {
         ts: DateTime.now(),
         round: state.roundNumber,
         turnIndex: state.turnIndexInRound,
-        actorId: activeEntity.id,
+        actorId: updatedEntity.id,
         action: BattleAction.flee,
-        message: '${activeEntity.name} successfully fled!',
+        message: '${updatedEntity.name} successfully fled!',
       ));
       
       state = state.copyWith(phase: BattlePhase.ended);
@@ -434,9 +431,9 @@ class BattleController extends StateNotifier<BattleState> {
         ts: DateTime.now(),
         round: state.roundNumber,
         turnIndex: state.turnIndexInRound,
-        actorId: activeEntity.id,
+        actorId: updatedEntity.id,
         action: BattleAction.flee,
-        message: '${activeEntity.name} failed to flee!',
+        message: '${updatedEntity.name} failed to flee!',
       ));
       
       _endTurn();
@@ -703,17 +700,18 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
-    // Check and spend AP
-    if (!_spendAP(activeEntity, BalanceConfig.costMove)) {
-      _addLog('Not enough AP to move! (Need ${BalanceConfig.costMove} AP)');
+    // Check and spend resources
+    if (!activeEntity.canAfford(BattleCosts.move.ap, BattleCosts.move.cp, BattleCosts.move.sp)) {
+      _addLog('❌ Not enough resources for Move (need AP:${BattleCosts.move.ap}, CP:${BattleCosts.move.cp}, SP:${BattleCosts.move.sp}).');
       return;
     }
-
-    // Get the updated entity after spending AP
-    final updatedEntity = state.activeEntity;
-    if (updatedEntity == null) return;
+    
+    final updatedEntity = activeEntity.spend(BattleCosts.move.ap, BattleCosts.move.cp, BattleCosts.move.sp);
+    _updateEntity(updatedEntity);
+    _addLog('− Spent AP:${BattleCosts.move.ap} CP:${BattleCosts.move.cp} SP:${BattleCosts.move.sp} for Move.');
 
     _moveEntity(updatedEntity, Position(row: row, col: col));
+    _addLog('🟦 ${updatedEntity.name} moved to ($row,$col).');
     _clearHighlights();
     
     state = state.copyWith(
@@ -1015,24 +1013,6 @@ class BattleController extends StateNotifier<BattleState> {
     ));
   }
 
-  /// Spend AP for an action, returns false if insufficient AP
-  bool _spendAP(Entity e, int cost) {
-    if (e.ap < cost) return false;
-    final updated = e.copyWith(ap: e.ap - cost);
-    _updateEntity(updated);
-    
-    // Log AP spending
-    _recordEntry(BattleLogEntry(
-      ts: DateTime.now(),
-      round: state.roundNumber,
-      turnIndex: state.turnIndexInRound,
-      actorId: e.id,
-      action: BattleAction.endTurn, // Using endTurn as a generic action for AP spending
-      message: '${e.name} spent $cost AP (AP left: ${updated.ap}/${updated.apMax})',
-    ));
-    
-    return true;
-  }
 
   /// Internal punch action for AI (no player turn restriction)
   void _actPunchInternal(Entity actor, String targetId) {
@@ -1046,15 +1026,19 @@ class BattleController extends StateNotifier<BattleState> {
       return;
     }
 
-    // Check and spend AP
-    if (!_spendAP(actor, BalanceConfig.costPunch)) {
-      _addLog('Not enough AP to punch! (Need ${BalanceConfig.costPunch} AP)');
+    // Check and spend resources
+    if (!actor.canAfford(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp)) {
+      _addLog('❌ Not enough resources for Punch (need AP:${BattleCosts.punch.ap}, CP:${BattleCosts.punch.cp}, SP:${BattleCosts.punch.sp}).');
       return;
     }
+    
+    final updatedActor = actor.spend(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp);
+    _updateEntity(updatedActor);
+    _addLog('− Spent AP:${BattleCosts.punch.ap} CP:${BattleCosts.punch.cp} SP:${BattleCosts.punch.sp} for Punch.');
 
     // Calculate damage using new formula with curves and mitigation
     final damage = BattleFormulas.calcDamage(
-      attacker: actor,
+      attacker: updatedActor,
       defender: target,
       rngIntInclusive: _rngIntInclusive,
       rngRollUnder: _rngRollUnder,
@@ -1070,11 +1054,11 @@ class BattleController extends StateNotifier<BattleState> {
       ts: DateTime.now(),
       round: state.roundNumber,
       turnIndex: state.turnIndexInRound,
-      actorId: actor.id,
+      actorId: updatedActor.id,
       action: BattleAction.punch,
       targetId: target.id,
       damage: damage,
-      message: '${actor.name} punched ${target.name} for $damage damage!',
+      message: '👊 ${updatedActor.name} used Punch on ${target.name} for $damage damage!',
     ));
 
     // Check if target died
@@ -1086,7 +1070,7 @@ class BattleController extends StateNotifier<BattleState> {
         ts: DateTime.now(),
         round: state.roundNumber,
         turnIndex: state.turnIndexInRound,
-        actorId: actor.id,
+        actorId: updatedActor.id,
         action: BattleAction.punch,
         targetId: target.id,
         message: '${target.name} was defeated!',
@@ -1098,15 +1082,19 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Internal flee action for AI (no player turn restriction)
   void _actFleeInternal(Entity actor) {
-    // Check and spend AP
-    if (!_spendAP(actor, BalanceConfig.costFlee)) {
-      _addLog('Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
+    // Check and spend AP (flee only costs AP)
+    if (actor.ap < BalanceConfig.costFlee) {
+      _addLog('❌ Not enough AP to flee! (Need ${BalanceConfig.costFlee} AP)');
       return;
     }
+    
+    final updatedActor = actor.copyWith(ap: actor.ap - BalanceConfig.costFlee);
+    _updateEntity(updatedActor);
+    _addLog('− Spent AP:${BalanceConfig.costFlee} for Flee.');
 
     // Calculate flee chance using new formula
     final fleeChance = BattleFormulas.calcFleeChance(
-      fleeEntity: actor,
+      fleeEntity: updatedActor,
       enemies: state.livingEnemies,
     );
     
@@ -1118,9 +1106,9 @@ class BattleController extends StateNotifier<BattleState> {
         ts: DateTime.now(),
         round: state.roundNumber,
         turnIndex: state.turnIndexInRound,
-        actorId: actor.id,
+        actorId: updatedActor.id,
         action: BattleAction.flee,
-        message: '${actor.name} successfully fled!',
+        message: '${updatedActor.name} successfully fled!',
       ));
       
       state = state.copyWith(phase: BattlePhase.ended);
@@ -1131,13 +1119,20 @@ class BattleController extends StateNotifier<BattleState> {
         ts: DateTime.now(),
         round: state.roundNumber,
         turnIndex: state.turnIndexInRound,
-        actorId: actor.id,
+        actorId: updatedActor.id,
         action: BattleAction.flee,
-        message: '${actor.name} failed to flee!',
+        message: '${updatedActor.name} failed to flee!',
       ));
       
       _endTurn();
     }
+  }
+
+  /// Focus on a specific enemy (for UI purposes)
+  void focusEnemy(String id) {
+    // For now, this is a no-op as the UI handles enemy selection
+    // In the future, you could store a focusedEnemyId in state if needed
+    // state = state.copyWith(focusedEnemyId: id);
   }
 }
 
@@ -1184,8 +1179,8 @@ final battleConfigProvider = Provider<BattleConfig>((ref) {
       pos: const Position(row: 2, col: 8),
       hp: 90,
       hpMax: 90,
-      cp: 0,
-      cpMax: 0,
+      cp: 50,
+      cpMax: 50,
       sp: 30,
       spMax: 30,
       str: 5,
@@ -1202,8 +1197,8 @@ final battleConfigProvider = Provider<BattleConfig>((ref) {
       pos: const Position(row: 1, col: 9),
       hp: 80,
       hpMax: 80,
-      cp: 0,
-      cpMax: 0,
+      cp: 40,
+      cpMax: 40,
       sp: 25,
       spMax: 25,
       str: 4,

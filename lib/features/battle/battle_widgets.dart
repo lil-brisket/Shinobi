@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_controller.dart';
+import '../../models/battle_costs.dart';
 
 /// HP/CP bar widget
 class StatBar extends StatelessWidget {
@@ -1174,183 +1174,311 @@ class ActionPanel extends ConsumerWidget {
     final isPlayerTurn = battleState.isPlayersTurn;
     final canMove = isPlayerTurn && 
         battleState.phase == BattlePhase.selectingAction &&
-        activeEntity.ap >= 20; // BalanceConfig.costMove
+        activeEntity.canAfford(BattleCosts.move.ap, BattleCosts.move.cp, BattleCosts.move.sp);
     final canPunch = isPlayerTurn && 
         battleState.phase == BattlePhase.selectingAction &&
         battleController.adjacentEnemies(activeEntity.id).isNotEmpty &&
-        activeEntity.ap >= 20; // BalanceConfig.costPunch
+        activeEntity.canAfford(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp);
     final canHeal = isPlayerTurn && 
         battleState.phase == BattlePhase.selectingAction &&
-        activeEntity.cp >= 10 &&
-        activeEntity.ap >= 20; // BalanceConfig.costHeal
-    final canFlee = isPlayerTurn && 
-        battleState.phase == BattlePhase.selectingAction &&
-        activeEntity.ap >= 30; // BalanceConfig.costFlee
+        activeEntity.canAfford(BattleCosts.heal.ap, BattleCosts.heal.cp, BattleCosts.heal.sp);
     final canEndTurn = isPlayerTurn && battleState.phase == BattlePhase.selectingAction;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter, 
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF141824), Color(0xFF0E0F18)],
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Player HUD
-          if (activeEntity != null && activeEntity.isPlayerControlled)
-            PlayerHudBars(entityId: activeEntity.id),
-          
-          // Enemy HUD
-          if (activeEntity != null && !activeEntity.isPlayerControlled)
-            EnemyHudBars(entityId: activeEntity.id),
-          
-          const SizedBox(height: 16),
-          
-          // Basic action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ActionButton(
-                  text: 'Move',
-                  icon: Icons.directions_walk,
-                  onPressed: canMove ? () => battleController.toggleMoveMode() : null,
-                  enabled: canMove,
-                  color: battleState.isMoveMode ? Colors.teal : Colors.teal,
-                  apCost: 20,
-                ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B0D14),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Player stats
+            Text(
+              activeEntity.name, 
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontSize: 16,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ActionButton(
-                  text: 'Punch',
-                  icon: Icons.sports_mma,
-                  onPressed: canPunch ? () {
-                    final adjacentEnemies = battleController.adjacentEnemies(activeEntity.id);
-                    if (adjacentEnemies.length == 1) {
-                      // Direct punch if only one adjacent enemy
-                      battleController.actPunch(adjacentEnemies.first.id);
-                    } else {
-                      // Enter punch mode if multiple enemies
-                      battleController.togglePunchMode();
-                    }
-                  } : null,
-                  enabled: canPunch,
-                  color: battleState.isPunchMode ? Colors.redAccent : Colors.redAccent,
-                  apCost: 20,
-                ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Stat bars
+            _buildStatBar("HP", activeEntity.hp, activeEntity.hpMax, Icons.favorite, Colors.redAccent),
+            const SizedBox(height: 8),
+            _buildStatBar("CP", activeEntity.cp, activeEntity.cpMax, Icons.bolt, Colors.lightBlueAccent),
+            const SizedBox(height: 8),
+            _buildStatBar("SP", activeEntity.sp, activeEntity.spMax, Icons.run_circle, Colors.lightGreenAccent),
+            const SizedBox(height: 8),
+            _buildStatBar("AP", activeEntity.ap, 100, Icons.timelapse, Colors.amberAccent),
+
+            const SizedBox(height: 12),
+            
+            // Basics section
+            Text(
+              "Basics", 
+              style: TextStyle(
+                color: Colors.white.withOpacity(.9),
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
-          
-          const SizedBox(height: 8),
-          
-          Row(
-            children: [
-              Expanded(
-                child: ActionButton(
-                  text: 'Heal',
-                  icon: Icons.healing,
-                  onPressed: canHeal ? () => battleController.actHeal() : null,
-                  enabled: canHeal,
-                  color: Colors.green,
-                  apCost: 20,
-                  cpCost: 10,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ActionButton(
-                  text: 'Flee',
-                  icon: Icons.exit_to_app,
-                  onPressed: canFlee ? () => battleController.actFlee() : null,
-                  enabled: canFlee,
-                  color: Colors.orange,
-                  apCost: 30,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Jutsus row
-          SizedBox(
-            height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+            ),
+            const SizedBox(height: 8),
+            
+            // Basic action buttons
+            Row(
               children: [
-                JutsuCard(
-                  name: 'Fireball',
-                  cpCost: 15,
-                  apCost: 30,
-                  icon: Icons.local_fire_department,
-                  onPressed: () {
-                    // TODO: Implement jutsu casting
-                  },
-                  enabled: activeEntity.cp >= 15 && activeEntity.ap >= 30,
+                Expanded(
+                  child: _buildActionButton(
+                    label: "Move",
+                    icon: Icons.open_with,
+                    costs: BattleCosts.move,
+                    onTap: canMove ? () => battleController.toggleMoveMode() : null,
+                    canAfford: canMove,
+                  ),
                 ),
-                JutsuCard(
-                  name: 'Shadow Clone',
-                  cpCost: 20,
-                  apCost: 40,
-                  icon: Icons.person_add,
-                  onPressed: () {
-                    // TODO: Implement jutsu casting
-                  },
-                  enabled: activeEntity.cp >= 20 && activeEntity.ap >= 40,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    label: "Punch",
+                    icon: Icons.front_hand,
+                    costs: BattleCosts.punch,
+                    onTap: canPunch ? () {
+                      final adjacentEnemies = battleController.adjacentEnemies(activeEntity.id);
+                      if (adjacentEnemies.length == 1) {
+                        battleController.actPunch(adjacentEnemies.first.id);
+                      } else {
+                        battleController.togglePunchMode();
+                      }
+                    } : null,
+                    canAfford: canPunch,
+                  ),
                 ),
-                JutsuCard(
-                  name: 'Lightning Bolt',
-                  cpCost: 25,
-                  apCost: 35,
-                  icon: Icons.flash_on,
-                  onPressed: () {
-                    // TODO: Implement jutsu casting
-                  },
-                  enabled: activeEntity.cp >= 25 && activeEntity.ap >= 35,
-                ),
-                JutsuCard(
-                  name: 'Earth Wall',
-                  cpCost: 18,
-                  apCost: 25,
-                  icon: Icons.wallpaper,
-                  onPressed: () {
-                    // TODO: Implement jutsu casting
-                  },
-                  enabled: activeEntity.cp >= 18 && activeEntity.ap >= 25,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    label: "Heal",
+                    icon: Icons.healing,
+                    costs: BattleCosts.heal,
+                    onTap: canHeal ? () => battleController.actHeal() : null,
+                    canAfford: canHeal,
+                  ),
                 ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // End turn or cancel button
-          if (battleState.isMoveMode || battleState.isPunchMode)
-            ActionButton(
-              text: 'Cancel',
-              icon: Icons.cancel,
-              onPressed: () => battleController.cancelCurrentMode(),
-              enabled: true,
-              color: Colors.grey,
-            )
-          else
-            ActionButton(
-              text: 'End Turn',
-              icon: Icons.skip_next,
-              onPressed: canEndTurn ? () => battleController.endTurn() : null,
-              enabled: canEndTurn,
-              color: Colors.blue,
+
+            const SizedBox(height: 12),
+            
+            // Jutsu section
+            Text(
+              "Jutsu", 
+              style: TextStyle(
+                color: Colors.white.withOpacity(.9),
+                fontWeight: FontWeight.w600,
+              ),
             ),
-        ],
+            const SizedBox(height: 8),
+            
+            // Jutsu grid
+            SizedBox(
+              height: 90,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildJutsuCard(
+                      label: "Fireball", 
+                      ap: 15, 
+                      cp: 40,
+                      icon: Icons.local_fire_department,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildJutsuCard(
+                      label: "Shadow Clone", 
+                      ap: 20, 
+                      cp: 50,
+                      icon: Icons.person_add,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildJutsuCard(
+                      label: "Lightning Bolt", 
+                      ap: 20, 
+                      cp: 60,
+                      icon: Icons.flash_on,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildJutsuCard(
+                      label: "Earth Wall", 
+                      ap: 20, 
+                      cp: 55,
+                      icon: Icons.wallpaper,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // End turn button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: canEndTurn ? () => battleController.endTurn() : null,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text("End Turn"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatBar(String label, int cur, int max, IconData icon, Color color) {
+    final pct = cur / max;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text("$label $cur/$max", style: const TextStyle(fontSize: 12, color: Colors.white))
+        ]),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: pct.clamp(0.0, 1.0),
+            minHeight: 10,
+            backgroundColor: Colors.black26,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback? onTap,
+    required ActionCosts costs,
+    required IconData icon,
+    required bool canAfford,
+  }) {
+    return InkWell(
+      onTap: canAfford ? onTap : null,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: canAfford ? Colors.blueGrey.shade700 : Colors.blueGrey.shade900,
+          boxShadow: [
+            if (canAfford)
+              BoxShadow(
+                blurRadius: 8,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(.25),
+              ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(icon, size: 18, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                label, 
+                style: const TextStyle(
+                  fontSize: 14, 
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              if (costs.ap > 0) _buildCostBadge("AP ${costs.ap}"),
+              if (costs.cp > 0) _buildCostBadge("CP ${costs.cp}"),
+              if (costs.sp > 0) _buildCostBadge("SP ${costs.sp}"),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCostBadge(String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(999),
+      color: Colors.black.withOpacity(.25),
+    ),
+    child: Text(
+      text, 
+      style: const TextStyle(fontSize: 11, color: Colors.white),
+    ),
+  );
+
+  Widget _buildJutsuCard({
+    required String label,
+    required int ap,
+    required int cp,
+    required IconData icon,
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141A24),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: Colors.white),
+                const SizedBox(width: 4),
+                Text(
+                  label, 
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Wrap(spacing: 6, children: [
+              _buildCostBadge('AP $ap'),
+              _buildCostBadge('CP $cp'),
+            ]),
+          ],
+        ),
       ),
     );
   }

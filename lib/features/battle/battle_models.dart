@@ -177,6 +177,26 @@ class Entity {
   /// Derived getter for alive status
   bool get alive => hp > 0;
 
+  /// Check if entity can afford the given costs
+  bool canAfford(int apCost, int cpCost, int spCost) =>
+      ap >= apCost && cp >= cpCost && sp >= spCost;
+
+  /// Spend the given costs (returns new entity with updated stats)
+  Entity spend(int apCost, int cpCost, int spCost) {
+    return copyWith(
+      ap: ap - apCost,
+      cp: cp - cpCost,
+      sp: sp - spCost,
+    );
+  }
+
+  /// Heal the entity by the given amount (returns new entity with updated HP)
+  Entity heal(int amount) {
+    final missing = hpMax - hp;
+    final healed = amount.clamp(0, missing);
+    return copyWith(hp: hp + healed);
+  }
+
   /// Copy with method for immutable updates
   Entity copyWith({
     String? id,
