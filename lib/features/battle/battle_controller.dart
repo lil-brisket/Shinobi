@@ -335,7 +335,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (activeEntity == null || !target.alive) return;
 
     // Check if target is within punch range (including diagonals)
-    if (_euclideanDistance(activeEntity.pos, target.pos) > 1.5) {
+    if (_euclideanDistance(activeEntity.pos, target.pos) > 2.5) {
       _addLog('Target is out of punch range!');
       return;
     }
@@ -612,7 +612,7 @@ class BattleController extends StateNotifier<BattleState> {
     }
 
     // Check if within punch range of a player - punch the weakest
-    final nearbyPlayers = _getNearbyEnemies(enemy.id, 1.5)
+    final nearbyPlayers = _getNearbyEnemies(enemy.id, 2.5)
         .where((e) => e.isPlayerControlled)
         .toList();
     
@@ -632,7 +632,7 @@ class BattleController extends StateNotifier<BattleState> {
     // After moving, check if we can punch
     final updatedEnemy = state.activeEntity;
     if (updatedEnemy != null) {
-      final newNearbyPlayers = _getNearbyEnemies(updatedEnemy.id, 1.5)
+      final newNearbyPlayers = _getNearbyEnemies(updatedEnemy.id, 2.5)
           .where((e) => e.isPlayerControlled)
           .toList();
       
@@ -807,7 +807,7 @@ class BattleController extends StateNotifier<BattleState> {
 
     // Check if the selected tile is within punch range (including diagonals)
     final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
-    if (distance > 1.5) {
+    if (distance > 2.5) {
       _addLog('Target is out of punch range!');
       return;
     }
@@ -910,7 +910,7 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Internal method to get adjacent enemies
   List<Entity> _getAdjacentEnemies(String entityId) {
-    return _getNearbyEnemies(entityId, 1.5);
+    return _getNearbyEnemies(entityId, 2.5);
   }
 
   /// Get enemies within a certain radius (Euclidean distance for punch range)
@@ -996,7 +996,7 @@ class BattleController extends StateNotifier<BattleState> {
       for (int col = 0; col < state.cols; col++) {
         final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
         
-        if (distance <= 1.5 && distance > 0) { // Within range but not the same position (1.5 allows diagonals)
+        if (distance <= 2.5 && distance > 0) { // Within range but not the same position (2.5 allows 2-square diagonals)
           final tile = state.tiles[row][col];
           
           if (tile.entityId != null) {
@@ -1217,7 +1217,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (!target.alive) return;
 
     // Check if target is within punch range (including diagonals)
-    if (_euclideanDistance(actor.pos, target.pos) > 1.5) {
+    if (_euclideanDistance(actor.pos, target.pos) > 2.5) {
       _addLog('Target is out of punch range!');
       return;
     }
