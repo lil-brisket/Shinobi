@@ -7,7 +7,7 @@ class HealService {
   static const double spCostPerHp = 2.0; // 2 SP per HP healed
   
   // Base XP reward per HP healed
-  static const double xpPerHp = 0.1; // 0.1 XP per HP healed
+  static const double xpPerHp = 1.0; // 1 XP per HP healed
 
   /// Heal a player and return the updated player with new stats and profession XP
   static Player healPlayer(Player healer, Player target) {
