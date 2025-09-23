@@ -486,3 +486,105 @@ final settingsProvider = StateProvider<Map<String, bool>>((ref) {
     'darkTheme': true,
   };
 });
+
+// Other Players Provider (for clinic functionality)
+final otherPlayersProvider = StateProvider<List<Player>>((ref) {
+  return [
+    Player(
+      id: 'player_002',
+      name: 'Sasuke_Uchiha',
+      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
+      village: 'Hidden Leaf',
+      ryo: 12000,
+      stats: const PlayerStats(
+        level: 23,
+        str: 80000,
+        intl: 110000,
+        spd: 180000,
+        wil: 60000,
+        nin: 280000,
+        gen: 100000,
+        buk: 85000,
+        tai: 25000,
+        currentHP: 2000, // Below max (2300)
+        currentSP: 2300,
+        currentCP: 2300,
+      ),
+      jutsuIds: ['chidori', 'fireball'],
+      itemIds: ['kunai', 'shuriken'],
+      rank: PlayerRank.genin,
+    ),
+    Player(
+      id: 'player_003',
+      name: 'Sakura_Haruno',
+      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
+      village: 'Hidden Leaf',
+      ryo: 8000,
+      stats: const PlayerStats(
+        level: 20,
+        str: 60000,
+        intl: 90000,
+        spd: 120000,
+        wil: 80000,
+        nin: 200000,
+        gen: 150000,
+        buk: 60000,
+        tai: 30000,
+        currentHP: 1500, // Below max (2000)
+        currentSP: 2000,
+        currentCP: 2000,
+      ),
+      jutsuIds: ['healing_jutsu'],
+      itemIds: ['medical_kit'],
+      rank: PlayerRank.genin,
+    ),
+    Player(
+      id: 'player_004',
+      name: 'Kakashi_Hatake',
+      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=K',
+      village: 'Hidden Leaf',
+      ryo: 25000,
+      stats: const PlayerStats(
+        level: 35,
+        str: 150000,
+        intl: 200000,
+        spd: 250000,
+        wil: 180000,
+        nin: 400000,
+        gen: 300000,
+        buk: 200000,
+        tai: 150000,
+        currentHP: 3500, // Below max (4000)
+        currentSP: 4000,
+        currentCP: 4000,
+      ),
+      jutsuIds: ['lightning_blade', 'sharingan'],
+      itemIds: ['kunai', 'book'],
+      rank: PlayerRank.jonin,
+    ),
+    Player(
+      id: 'player_005',
+      name: 'Hinata_Hyuga',
+      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=H',
+      village: 'Hidden Leaf',
+      ryo: 10000,
+      stats: const PlayerStats(
+        level: 22,
+        str: 70000,
+        intl: 120000,
+        spd: 160000,
+        wil: 70000,
+        nin: 250000,
+        gen: 120000,
+        buk: 70000,
+        tai: 40000,
+        currentHP: 2200, // At max (2200)
+        currentSP: 2200,
+        currentCP: 2200,
+      ),
+      jutsuIds: ['byakugan', 'gentle_fist'],
+      itemIds: ['kunai'],
+      rank: PlayerRank.genin,
+    ),
+  ];
+});

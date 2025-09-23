@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/stat_bar.dart';
-import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
-import '../../models/item.dart';
 import '../../models/stats.dart';
+import '../../models/player.dart';
+import '../../services/heal_service.dart';
 import '../../utils/snackbar_utils.dart';
 
 class HospitalScreen extends ConsumerWidget {
@@ -71,7 +71,7 @@ class HospitalScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Treatment Options',
+                  'Clinic',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -79,57 +79,7 @@ class HospitalScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                InfoCard(
-                  title: 'Rest & Recover',
-                  subtitle: 'Instantly restore all HP, Chakra, and Stamina',
-                  leadingWidget: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppTheme.staminaColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: const Icon(
-                      Icons.bed,
-                      color: AppTheme.staminaColor,
-                      size: 24,
-                    ),
-                  ),
-                  trailingWidget: ElevatedButton(
-                    onPressed: () => _rest(context, ref),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.staminaColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Rest'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                InfoCard(
-                  title: 'Use Healing Item',
-                  subtitle: 'Use items from your inventory',
-                  leadingWidget: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppTheme.hpColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: const Icon(
-                      Icons.healing,
-                      color: AppTheme.hpColor,
-                      size: 24,
-                    ),
-                  ),
-                  trailingWidget: ElevatedButton(
-                    onPressed: () => _showInventory(context, ref),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.hpColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Use Item'),
-                  ),
-                ),
+                _buildClinicSection(context, ref),
               ],
             ),
           ),
@@ -138,131 +88,154 @@ class HospitalScreen extends ConsumerWidget {
     );
   }
 
-  void _rest(BuildContext context, WidgetRef ref) {
-    final player = ref.read(playerProvider);
-    ref.read(playerProvider.notifier).updateStats(player.stats.restoreAll());
 
-    SnackbarUtils.showSuccess(
-      context,
-      'Fully rested! All stats restored!',
+  Widget _buildClinicSection(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(playerProvider);
+    final otherPlayers = ref.watch(otherPlayersProvider);
+    
+    // Filter players from same village with HP below max (excluding KO/Waiting)
+    final sameVillagePlayers = otherPlayers.where((otherPlayer) => 
+      otherPlayer.village == player.village && 
+      otherPlayer.stats.hp < otherPlayer.stats.maxHp &&
+      otherPlayer.stats.hp > 0 // Not KO
+    ).toList();
+
+    if (sameVillagePlayers.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: Text(
+            'No Shinobi currently require medical attention',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: sameVillagePlayers.map((targetPlayer) => 
+          _buildPlayerHealItem(context, ref, player, targetPlayer)
+        ).toList(),
+      ),
     );
   }
 
-  void _showInventory(BuildContext context, WidgetRef ref) {
-    final inventory = ref.read(inventoryProvider);
-    final healingItems = inventory.where((item) => 
-      item.effect.containsKey('heal') || item.effect.containsKey('chakra')).toList();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surfaceColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildPlayerHealItem(BuildContext context, WidgetRef ref, Player healer, Player target) {
+    final healingInfo = HealService.getHealingInfo(healer, target);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(12),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Healing Items',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (healingItems.isEmpty)
-              const Text(
-                'No healing items in inventory',
-                style: TextStyle(color: Colors.white70),
-              )
-            else
-              ...healingItems.map((item) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: NetworkImage(target.avatarUrl),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  target.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 4),
+                Row(
                   children: [
                     Text(
-                      item.icon,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'Quantity: ${item.quantity}',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ],
+                      'HP: ${target.stats.hp}/${target.stats.maxHp}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () => _useItem(context, ref, item),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accentColor,
-                        foregroundColor: Colors.white,
+                    const SizedBox(width: 16),
+                    if (healingInfo.canHeal)
+                      Text(
+                        'Heal: +${healingInfo.healAmount}',
+                        style: const TextStyle(
+                          color: AppTheme.hpColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      child: const Text('Use'),
-                    ),
                   ],
                 ),
-              )),
-          ],
-        ),
+                if (!healingInfo.canHeal && healingInfo.reason != null)
+                  Text(
+                    healingInfo.reason!,
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: healingInfo.canHeal ? () => _healPlayer(context, ref, healer, target) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: healingInfo.canHeal ? AppTheme.hpColor : Colors.grey,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text('Heal'),
+          ),
+        ],
       ),
     );
   }
 
-  void _useItem(BuildContext context, WidgetRef ref, item) {
-    final player = ref.read(playerProvider);
-    final inventory = ref.read(inventoryProvider);
-    
-    // Find item in inventory
-    final itemIndex = inventory.indexWhere((i) => i.id == item.id);
-    if (itemIndex != -1 && inventory[itemIndex].quantity > 0) {
-      // Update inventory
-      final updatedInventory = List<Item>.from(inventory);
-      updatedInventory[itemIndex] = updatedInventory[itemIndex].copyWith(
-        quantity: updatedInventory[itemIndex].quantity - 1,
-      );
-      ref.read(inventoryProvider.notifier).state = updatedInventory;
-
-      // Apply healing effects using the new stat system
-      PlayerStats newStats = player.stats;
+  void _healPlayer(BuildContext context, WidgetRef ref, Player healer, Player target) {
+    try {
+      final updatedHealer = HealService.healPlayer(healer, target);
+      ref.read(playerProvider.notifier).state = updatedHealer;
       
-      if (item.effect.containsKey('heal')) {
-        newStats = newStats.healHP(item.effect['heal'] as int);
-      }
-      if (item.effect.containsKey('chakra')) {
-        newStats = newStats.restoreCP(item.effect['chakra'] as int);
-      }
-      if (item.effect.containsKey('stamina')) {
-        newStats = newStats.restoreSP(item.effect['stamina'] as int);
-      }
-
-      final newPlayer = player.copyWith(stats: newStats);
-      ref.read(playerProvider.notifier).state = newPlayer;
-
-      Navigator.pop(context);
+      // Update the target player in the other players list
+      final otherPlayers = ref.read(otherPlayersProvider);
+      final updatedOtherPlayers = otherPlayers.map((player) {
+        if (player.id == target.id) {
+          final healingInfo = HealService.getHealingInfo(healer, target);
+          return target.copyWith(
+            stats: target.stats.healHP(healingInfo.healAmount),
+          );
+        }
+        return player;
+      }).toList();
+      ref.read(otherPlayersProvider.notifier).state = updatedOtherPlayers;
+      
+      final xpGained = updatedHealer.medNinja.xp - healer.medNinja.xp;
       SnackbarUtils.showSuccess(
         context,
-        'Used ${item.name}!',
+        'Successfully healed ${target.name}! +$xpGained Medical XP',
+      );
+    } catch (e) {
+      SnackbarUtils.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     }
   }

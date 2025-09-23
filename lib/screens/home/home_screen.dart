@@ -247,10 +247,10 @@ class HomeScreen extends ConsumerWidget {
   }
 
   int _getMaxHP(PlayerStats stats) {
-    return 80 + 20 * stats.level + 6 * stats.str + 2 * stats.wil;
+    return stats.maxHP;
   }
 
   int _getCurrentHP(PlayerStats stats) {
-    return stats.currentHP ?? _getMaxHP(stats);
+    return stats.hp;
   }
 }

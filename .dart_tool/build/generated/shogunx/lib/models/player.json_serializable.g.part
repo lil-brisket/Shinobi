@@ -2,6 +2,20 @@
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$MedicalNinjaProfessionImpl _$$MedicalNinjaProfessionImplFromJson(
+        Map<String, dynamic> json) =>
+    _$MedicalNinjaProfessionImpl(
+      level: (json['level'] as num?)?.toInt() ?? 1,
+      xp: (json['xp'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$$MedicalNinjaProfessionImplToJson(
+        _$MedicalNinjaProfessionImpl instance) =>
+    <String, dynamic>{
+      'level': instance.level,
+      'xp': instance.xp,
+    };
+
 _$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -19,6 +33,10 @@ _$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
           const [],
       rank: $enumDecodeNullable(_$PlayerRankEnumMap, json['rank']) ??
           PlayerRank.genin,
+      medNinja: json['medNinja'] == null
+          ? const MedicalNinjaProfession()
+          : MedicalNinjaProfession.fromJson(
+              json['medNinja'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$PlayerImplToJson(_$PlayerImpl instance) =>
@@ -32,6 +50,7 @@ Map<String, dynamic> _$$PlayerImplToJson(_$PlayerImpl instance) =>
       'jutsuIds': instance.jutsuIds,
       'itemIds': instance.itemIds,
       'rank': _$PlayerRankEnumMap[instance.rank]!,
+      'medNinja': instance.medNinja,
     };
 
 const _$PlayerRankEnumMap = {

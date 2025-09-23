@@ -76,6 +76,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const UserStatsPanel(),
                 const SizedBox(height: 24),
 
+                // Medical Ninja Profession Card
+                _buildMedicalNinjaCard(context, player),
+                const SizedBox(height: 24),
+
                 // Village Change Button (only for Chunin rank and above)
                 if (player.rank.index >= PlayerRank.chunin.index)
                   Container(
@@ -278,6 +282,142 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // Using base stat cap of 250k
     const cap = 250000.0;
     return (stats.str / cap).clamp(0.0, 1.0);
+  }
+
+  // Medical Ninja Profession Card
+  Widget _buildMedicalNinjaCard(BuildContext context, Player player) {
+    final medNinja = player.medNinja;
+    final progress = medNinja.xp / medNinja.xpToNext;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppTheme.hpColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: const Icon(
+                  Icons.medical_services,
+                  color: AppTheme.hpColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Profession • Medical Ninja',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Level ${medNinja.level}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: AppTheme.accentColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // XP Progress Bar
+          Row(
+            children: [
+              Text(
+                'XP: ${medNinja.xp}/${medNinja.xpToNext}',
+                style: AppTheme.statLabelStyle.copyWith(
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.textSecondary.withValues(alpha: 0.2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress.clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.hpColor, AppTheme.accentColor],
+                  ),
+                  boxShadow: AppTheme.progressBarGlow,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Bonus Chips
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.hpColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.hpColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '+${(medNinja.healingBonus * 100).toStringAsFixed(0)}% healing',
+                  style: const TextStyle(
+                    color: AppTheme.hpColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.chakraColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.chakraColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '–${(medNinja.costReduction * 100).toStringAsFixed(0)}% CP/SP cost',
+                  style: const TextStyle(
+                    color: AppTheme.chakraColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
 

@@ -147,10 +147,6 @@ class _UserStatsPanelState extends ConsumerState<UserStatsPanel> {
           
           // Stats Grid
           _buildStatsGrid(player.stats),
-          const SizedBox(height: 24),
-          
-          // Elemental Proficiency
-          _buildElementalProficiency(),
         ],
       ),
     );
@@ -430,62 +426,6 @@ class _UserStatsPanelState extends ConsumerState<UserStatsPanel> {
     );
   }
 
-  Widget _buildElementalProficiency() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Elemental Proficiency',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[300],
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildElementPill('Water', '💧', Colors.blue[400]!),
-            _buildElementPill('Wind', '🌪️', Colors.green[400]!),
-            _buildElementPill('Fire', '🔥', Colors.red[400]!),
-            _buildElementPill('Earth', '⛰️', Colors.yellow[600]!),
-            _buildElementPill('Lightning', '⚡', Colors.yellow[400]!),
-            _buildElementPill('Ice', '❄️', Colors.cyan[300]!),
-            _buildElementPill('None', '🚫', Colors.grey[400]!),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildElementPill(String name, String emoji, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[700]?.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[600]!),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 6),
-          Text(
-            name,
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRankBadge(String rank, String rankColor) {
     Color color;
