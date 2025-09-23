@@ -11,6 +11,7 @@ import '../screens/village_hub/training_dojo_screen.dart';
 import '../screens/village_hub/item_shop_screen.dart';
 import '../screens/village_hub/hospital_screen.dart';
 import '../screens/village_hub/clan_hall_screen.dart';
+import '../screens/clan/clan_page.dart';
 import '../screens/village_hub/bank_screen.dart';
 import '../screens/village_hub/battle_grounds_screen.dart';
 import '../screens/village_hub/mission_centre_screen.dart';
@@ -114,6 +115,11 @@ class AppRouter {
                 path: 'clan-hall',
                 name: 'clan-hall',
                 builder: (context, state) => const ClanHallScreen(),
+              ),
+              GoRoute(
+                path: 'clan',
+                name: 'clan',
+                builder: (context, state) => const ClanPage(),
               ),
               GoRoute(
                 path: 'bank',

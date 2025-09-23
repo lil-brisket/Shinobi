@@ -1,97 +1,35 @@
-class ClanMember {
-  final String id;
-  final String name;
-  final String rank;
-  final DateTime joinedAt;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const ClanMember({
-    required this.id,
-    required this.name,
-    required this.rank,
-    required this.joinedAt,
-  });
+part 'clan.freezed.dart';
+part 'clan.g.dart';
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'rank': rank,
-      'joinedAt': joinedAt.toIso8601String(),
-    };
-  }
+@freezed
+class Clan with _$Clan {
+  const factory Clan({
+    required String id,
+    required String name,
+    required String villageId,
+    required String leaderId,
+    String? emblemUrl,
+    String? description,
+    @Default(0) int score,
+    @Default(0) int wins,
+    @Default(0) int losses,
+    required DateTime createdAt,
+    DateTime? updatedAt,
+  }) = _Clan;
 
-  factory ClanMember.fromJson(Map<String, dynamic> json) {
-    return ClanMember(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      rank: json['rank'] ?? '',
-      joinedAt: DateTime.parse(json['joinedAt'] ?? DateTime.now().toIso8601String()),
-    );
-  }
+  factory Clan.fromJson(Map<String, dynamic> json) => _$ClanFromJson(json);
 }
 
-class Clan {
-  final String id;
-  final String name;
-  final String description;
-  final String rank;
-  final List<ClanMember> members;
-  final String leaderId;
-  final DateTime createdAt;
+@freezed
+class ClanWithDetails with _$ClanWithDetails {
+  const factory ClanWithDetails({
+    required Clan clan,
+    required String leaderName,
+    required int memberCount,
+    required int advisorCount,
+  }) = _ClanWithDetails;
 
-  const Clan({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.rank,
-    required this.members,
-    required this.leaderId,
-    required this.createdAt,
-  });
-
-  Clan copyWith({
-    String? id,
-    String? name,
-    String? description,
-    String? rank,
-    List<ClanMember>? members,
-    String? leaderId,
-    DateTime? createdAt,
-  }) {
-    return Clan(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      rank: rank ?? this.rank,
-      members: members ?? this.members,
-      leaderId: leaderId ?? this.leaderId,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'rank': rank,
-      'members': members.map((m) => m.toJson()).toList(),
-      'leaderId': leaderId,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  factory Clan.fromJson(Map<String, dynamic> json) {
-    return Clan(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      rank: json['rank'] ?? '',
-      members: (json['members'] as List<dynamic>?)
-          ?.map((m) => ClanMember.fromJson(m))
-          .toList() ?? [],
-      leaderId: json['leaderId'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-    );
-  }
+  factory ClanWithDetails.fromJson(Map<String, dynamic> json) => _$ClanWithDetailsFromJson(json);
 }
