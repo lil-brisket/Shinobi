@@ -23,6 +23,7 @@ import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
 import '../controllers/auth_provider.dart';
+import '../debug/clan_seed_utility.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -169,6 +170,12 @@ class AppRouter {
             path: '/profile',
             name: 'profile',
             builder: (context, state) => const ProfileScreen(),
+          ),
+          // Debug utility (only accessible in development)
+          GoRoute(
+            path: '/debug/clan-seed',
+            name: 'clan-seed-utility',
+            builder: (context, state) => const ClanSeedUtility(),
           ),
         ],
       ),

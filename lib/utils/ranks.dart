@@ -4,11 +4,11 @@ enum NinjaRank { student, genin, chunin, jounin, eliteJounin }
 
 class RankThresholds {
   // CUMULATIVE XP thresholds (inclusive lower bound, exclusive upper bound except top)
-  static const int studentCap    = 7_500;      // 0 .. <7,500
-  static const int geninCap      = 60_000;     // 7,500 .. <60,000
-  static const int chuninCap     = 750_000;    // 60,000 .. <750,000
-  static const int jouninCap     = 2_250_000;  // 750,000 .. <2,250,000
-  static const int eliteCap      = 5_000_000;  // 2,250,000 .. 5,000,000 (max)
+  static const int studentCap    = 7500;      // 0 .. <7,500
+  static const int geninCap      = 60000;     // 7,500 .. <60,000
+  static const int chuninCap     = 750000;    // 60,000 .. <750,000
+  static const int jouninCap     = 2250000;  // 750,000 .. <2,250,000
+  static const int eliteCap      = 5000000;  // 2,250,000 .. 5,000,000 (max)
 
   static NinjaRank rankForXp(int xp) {
     if (xp < studentCap) return NinjaRank.student;

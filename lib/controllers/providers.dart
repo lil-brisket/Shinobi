@@ -8,6 +8,7 @@ import '../models/mission.dart';
 import '../models/clan.dart';
 import '../models/village.dart';
 import '../models/news.dart';
+import 'auth_provider.dart';
 import '../models/chat.dart';
 import '../models/timer.dart';
 import '../constants/villages.dart';
@@ -15,6 +16,19 @@ import '../constants/villages.dart';
 // Player Provider
 final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
   return PlayerNotifier();
+});
+
+// Current player with proper village and username
+final currentPlayerProvider = Provider<Player>((ref) {
+  final player = ref.watch(playerProvider);
+  final currentVillage = ref.watch(currentVillageProvider);
+  final authState = ref.watch(authProvider);
+  
+  // Update player with current village and username
+  return player.copyWith(
+    name: authState.username ?? 'Guest Player',
+    village: currentVillage?.name ?? 'No Village',
+  );
 });
 
 class PlayerNotifier extends StateNotifier<Player> {

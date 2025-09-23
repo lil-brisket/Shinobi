@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/villages.dart';
+import '../models/village.dart';
 
 // Auth state model
 class AuthState {
@@ -7,12 +9,14 @@ class AuthState {
   final String? userId;
   final String? username;
   final String? sessionToken;
+  final String? villageId;
 
   const AuthState({
     this.isAuthenticated = false,
     this.userId,
     this.username,
     this.sessionToken,
+    this.villageId,
   });
 
   AuthState copyWith({
@@ -20,12 +24,14 @@ class AuthState {
     String? userId,
     String? username,
     String? sessionToken,
+    String? villageId,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       userId: userId ?? this.userId,
       username: username ?? this.username,
       sessionToken: sessionToken ?? this.sessionToken,
+      villageId: villageId ?? this.villageId,
     );
   }
 }
@@ -43,6 +49,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const String _userIdKey = 'user_id';
   static const String _usernameKey = 'username';
   static const String _sessionTokenKey = 'session_token';
+  static const String _villageIdKey = 'village_id';
 
   Future<void> _loadSession() async {
     try {
@@ -50,6 +57,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final userId = prefs.getString(_userIdKey);
       final username = prefs.getString(_usernameKey);
       final sessionToken = prefs.getString(_sessionTokenKey);
+      final villageId = prefs.getString(_villageIdKey);
 
       if (userId != null && username != null && sessionToken != null) {
         state = AuthState(
@@ -57,6 +65,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           userId: userId,
           username: username,
           sessionToken: sessionToken,
+          villageId: villageId,
         );
       }
     } catch (e) {
@@ -81,11 +90,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await prefs.setString(_usernameKey, username);
         await prefs.setString(_sessionTokenKey, sessionToken);
         
+        // Load existing villageId from storage (if any)
+        final existingVillageId = prefs.getString(_villageIdKey);
+        
         state = AuthState(
           isAuthenticated: true,
           userId: userId,
           username: username,
           sessionToken: sessionToken,
+          villageId: existingVillageId,
         );
         
         return true;
@@ -112,13 +125,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await prefs.setString(_userIdKey, userId);
         await prefs.setString(_usernameKey, username);
         await prefs.setString(_sessionTokenKey, sessionToken);
-        await prefs.setString('village_id', villageId);
+        await prefs.setString(_villageIdKey, villageId);
         
         state = AuthState(
           isAuthenticated: true,
           userId: userId,
           username: username,
           sessionToken: sessionToken,
+          villageId: villageId,
         );
         
         return true;
@@ -136,6 +150,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await prefs.remove(_userIdKey);
       await prefs.remove(_usernameKey);
       await prefs.remove(_sessionTokenKey);
+      await prefs.remove(_villageIdKey);
       
       state = const AuthState();
     } catch (e) {
@@ -148,14 +163,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
       final sessionToken = 'guest_token_${DateTime.now().millisecondsSinceEpoch}';
       
+      // Assign guest player to Willowshade Village by default
+      const defaultVillageId = 'willowshade';
+      
       state = AuthState(
         isAuthenticated: true,
         userId: guestId,
         username: 'Guest Player',
         sessionToken: sessionToken,
+        villageId: defaultVillageId,
       );
     } catch (e) {
       // Guest login error - handle silently
     }
   }
 }
+
+// Provider for current player's village
+final currentVillageProvider = Provider<Village?>((ref) {
+  final authState = ref.watch(authProvider);
+  if (authState.villageId != null) {
+    return VillageConstants.getVillageById(authState.villageId!);
+  }
+  return null;
+});

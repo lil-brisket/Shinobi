@@ -12,7 +12,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final player = ref.watch(playerProvider);
+    final player = ref.watch(currentPlayerProvider);
     final news = ref.watch(newsProvider);
     final chatMessages = ref.watch(chatProvider);
 
@@ -38,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Hidden Leaf Village • Level ${player.stats.level}',
+                        '${player.village} • Level ${player.stats.level}',
                         style: AppTheme.descriptionStyle,
                       ),
                     ],

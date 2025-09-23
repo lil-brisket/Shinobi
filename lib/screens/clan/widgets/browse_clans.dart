@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../constants/villages.dart';
 import '../../../controllers/clan_providers.dart';
+import '../../../controllers/auth_provider.dart';
 import 'apply_button.dart';
 
 class BrowseClans extends ConsumerStatefulWidget {
@@ -14,7 +15,6 @@ class BrowseClans extends ConsumerStatefulWidget {
 
 class _BrowseClansState extends ConsumerState<BrowseClans> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedVillageId = VillageConstants.allVillages.first.id;
   String _searchQuery = '';
 
   @override
@@ -25,8 +25,43 @@ class _BrowseClansState extends ConsumerState<BrowseClans> {
 
   @override
   Widget build(BuildContext context) {
+    final currentVillage = ref.watch(currentVillageProvider);
+    
+    // If no village is set, show error
+    if (currentVillage == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.location_off,
+              color: AppTheme.hpColor,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Village Selected',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Please select a village during registration to browse clans.',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     final clans = ref.watch(browseClansProvider((
-      villageId: _selectedVillageId,
+      villageId: currentVillage.id,
       query: _searchQuery,
     )));
 
@@ -57,11 +92,42 @@ class _BrowseClansState extends ConsumerState<BrowseClans> {
                   color: Colors.white70,
                 ),
               ),
+              const SizedBox(height: 12),
+              // Current village display
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.accentColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      currentVillage.emblem,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      currentVillage.name,
+                      style: const TextStyle(
+                        color: AppTheme.accentColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
         
-        // Filters
+        // Search bar
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.all(16),
@@ -69,79 +135,26 @@ class _BrowseClansState extends ConsumerState<BrowseClans> {
             color: AppTheme.surfaceColor,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: [
-              // Village selector
-              Row(
-                children: [
-                  Text(
-                    'Village:',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedVillageId,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedVillageId = value!;
-                        });
-                      },
-                      dropdownColor: AppTheme.surfaceColor,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white30),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.accentColor),
-                        ),
-                      ),
-                      items: VillageConstants.allVillages.map((village) {
-                        return DropdownMenuItem<String>(
-                          value: village.id,
-                          child: Row(
-                            children: [
-                              Text(village.emblem, style: const TextStyle(fontSize: 16)),
-                              const SizedBox(width: 8),
-                              Text(village.name),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'Search clans in your village...',
+              hintStyle: TextStyle(color: Colors.white60),
+              border: OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white30),
               ),
-              const SizedBox(height: 16),
-              
-              // Search bar
-              TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Search clans...',
-                  hintStyle: TextStyle(color: Colors.white60),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white30),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.accentColor),
-                  ),
-                  prefixIcon: Icon(Icons.search, color: Colors.white60),
-                ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppTheme.accentColor),
               ),
-            ],
+              prefixIcon: Icon(Icons.search, color: Colors.white60),
+            ),
           ),
         ),
         
@@ -165,16 +178,16 @@ class _BrowseClansState extends ConsumerState<BrowseClans> {
                       Text(
                         _searchQuery.isNotEmpty 
                             ? 'No clans found matching "$_searchQuery"'
-                            : 'No clans in this village yet',
+                            : 'No clans in ${currentVillage.name} yet',
                         style: const TextStyle(
                           color: Colors.white54,
                           fontSize: 18,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Be the first to create a clan!',
-                        style: TextStyle(
+                      Text(
+                        'Be the first to create a clan in ${currentVillage.name}!',
+                        style: const TextStyle(
                           color: Colors.white54,
                           fontSize: 14,
                         ),

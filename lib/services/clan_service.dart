@@ -13,32 +13,70 @@ class ClanService {
     String query = '',
   }) async {
     try {
-      String sql = '''
-        SELECT 
-          c.*,
-          u.display_name as leader_name,
-          COUNT(cm.id) as member_count,
-          COUNT(CASE WHEN cm.role = 'ADVISOR' THEN 1 END) as advisor_count
-        FROM clans c
-        LEFT JOIN auth.users u ON u.id = c.leader_id
-        LEFT JOIN clan_members cm ON cm.clan_id = c.id
-        WHERE c.village_id = @village_id
-        ${query.isNotEmpty ? "AND c.name ILIKE @query" : ""}
-        GROUP BY c.id, u.display_name
-        ORDER BY c.score DESC, c.name ASC
-      ''';
+      // First, get all clans for the village
+      var queryBuilder = _supabase
+          .from('clans')
+          .select('*')
+          .eq('village_id', villageId);
 
-      final response = await _supabase.rpc('execute_sql', params: {
-        'sql': sql,
-        'params': {
-          'village_id': villageId,
-          if (query.isNotEmpty) 'query': '%$query%',
+      if (query.isNotEmpty) {
+        queryBuilder = queryBuilder.ilike('name', '%$query%');
+      }
+
+      final clans = await queryBuilder.order('score', ascending: false).order('name');
+
+      // For each clan, get member count and leader info
+      List<ClanWithDetails> clanDetails = [];
+      for (final clanData in clans) {
+        // Get member count
+        final memberCount = await _supabase
+            .from('clan_members')
+            .select('id')
+            .eq('clan_id', clanData['id']);
+
+        // Get advisor count
+        final advisorCount = await _supabase
+            .from('clan_members')
+            .select('id')
+            .eq('clan_id', clanData['id'])
+            .eq('role', 'ADVISOR');
+
+        // Get leader name
+        String leaderName = 'Unknown';
+        if (clanData['leader_id'] != null) {
+          try {
+            final leader = await _supabase.auth.admin.getUserById(clanData['leader_id']);
+            leaderName = leader.user?.userMetadata?['display_name'] ?? 'Unknown';
+          } catch (e) {
+            // If we can't get leader info, use default
+            leaderName = 'Unknown';
+          }
         }
-      });
 
-      return (response as List)
-          .map((json) => ClanWithDetails.fromJson(json))
-          .toList();
+        // Create Clan object
+        final clan = Clan(
+          id: clanData['id'],
+          name: clanData['name'],
+          description: clanData['description'],
+          villageId: clanData['village_id'],
+          leaderId: clanData['leader_id'] ?? '',
+          emblemUrl: clanData['emblem_url'],
+          score: clanData['score'] ?? 0,
+          wins: clanData['wins'] ?? 0,
+          losses: clanData['losses'] ?? 0,
+          createdAt: DateTime.parse(clanData['created_at']),
+          updatedAt: clanData['updated_at'] != null ? DateTime.parse(clanData['updated_at']) : null,
+        );
+
+        clanDetails.add(ClanWithDetails(
+          clan: clan,
+          leaderName: leaderName,
+          memberCount: memberCount.length,
+          advisorCount: advisorCount.length,
+        ));
+      }
+
+      return clanDetails;
     } catch (e) {
       throw Exception('Failed to fetch clans: $e');
     }
@@ -363,29 +401,79 @@ class ClanService {
     String sortBy = 'score',
   }) async {
     try {
-      String sql = '''
-        SELECT 
-          c.*,
-          u.display_name as leader_name,
-          COUNT(cm.id) as member_count,
-          COUNT(CASE WHEN cm.role = 'ADVISOR' THEN 1 END) as advisor_count
-        FROM clans c
-        LEFT JOIN auth.users u ON u.id = c.leader_id
-        LEFT JOIN clan_members cm ON cm.clan_id = c.id
-        ${villageId != null ? "WHERE c.village_id = @village_id" : ""}
-        GROUP BY c.id, u.display_name
-        ORDER BY c.${sortBy} DESC, c.name ASC
-        LIMIT 50
-      ''';
+      // Get clans with optional village filter
+      var queryBuilder = _supabase.from('clans').select('*');
+      
+      if (villageId != null) {
+        queryBuilder = queryBuilder.eq('village_id', villageId);
+      }
 
-      final response = await _supabase.rpc('execute_sql', params: {
-        'sql': sql,
-        'params': villageId != null ? {'village_id': villageId} : {},
-      });
+      // Apply sorting and limit
+      PostgrestTransformBuilder<List<Map<String, dynamic>>> sortedQuery;
+      if (sortBy == 'score') {
+        sortedQuery = queryBuilder.order('score', ascending: false);
+      } else if (sortBy == 'name') {
+        sortedQuery = queryBuilder.order('name', ascending: true);
+      } else if (sortBy == 'created_at') {
+        sortedQuery = queryBuilder.order('created_at', ascending: false);
+      } else {
+        sortedQuery = queryBuilder.order('score', ascending: false);
+      }
 
-      return (response as List)
-          .map((json) => ClanWithDetails.fromJson(json))
-          .toList();
+      final clans = await sortedQuery.limit(50);
+
+      // For each clan, get member count and leader info
+      List<ClanWithDetails> clanDetails = [];
+      for (final clanData in clans) {
+        // Get member count
+        final memberCount = await _supabase
+            .from('clan_members')
+            .select('id')
+            .eq('clan_id', clanData['id']);
+
+        // Get advisor count
+        final advisorCount = await _supabase
+            .from('clan_members')
+            .select('id')
+            .eq('clan_id', clanData['id'])
+            .eq('role', 'ADVISOR');
+
+        // Get leader name
+        String leaderName = 'Unknown';
+        if (clanData['leader_id'] != null) {
+          try {
+            final leader = await _supabase.auth.admin.getUserById(clanData['leader_id']);
+            leaderName = leader.user?.userMetadata?['display_name'] ?? 'Unknown';
+          } catch (e) {
+            // If we can't get leader info, use default
+            leaderName = 'Unknown';
+          }
+        }
+
+        // Create Clan object
+        final clan = Clan(
+          id: clanData['id'],
+          name: clanData['name'],
+          description: clanData['description'],
+          villageId: clanData['village_id'],
+          leaderId: clanData['leader_id'] ?? '',
+          emblemUrl: clanData['emblem_url'],
+          score: clanData['score'] ?? 0,
+          wins: clanData['wins'] ?? 0,
+          losses: clanData['losses'] ?? 0,
+          createdAt: DateTime.parse(clanData['created_at']),
+          updatedAt: clanData['updated_at'] != null ? DateTime.parse(clanData['updated_at']) : null,
+        );
+
+        clanDetails.add(ClanWithDetails(
+          clan: clan,
+          leaderName: leaderName,
+          memberCount: memberCount.length,
+          advisorCount: advisorCount.length,
+        ));
+      }
+
+      return clanDetails;
     } catch (e) {
       throw Exception('Failed to fetch clan rankings: $e');
     }
