@@ -235,6 +235,19 @@ class BattleController extends StateNotifier<BattleState> {
     }
   }
 
+  /// Cancel current mode (move or punch)
+  void cancelCurrentMode() {
+    if (!state.isPlayersTurn) return;
+    
+    state = state.copyWith(
+      isMoveMode: false,
+      isPunchMode: false,
+      phase: BattlePhase.selectingAction,
+    );
+    
+    _clearHighlights();
+  }
+
   /// Toggle punch mode
   void togglePunchMode() {
     if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
@@ -586,35 +599,67 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Move entity to new position
   void _moveEntity(Entity entity, Position newPos) {
-    // Clear old tile
-    final oldTile = state.tiles[entity.pos.row][entity.pos.col]
-        .copyWith(entityId: null);
+    // Store the original position before updating
+    final originalPos = entity.pos;
     
-    // Set new tile
-    final newTile = state.tiles[newPos.row][newPos.col]
-        .copyWith(entityId: entity.id);
-    
-    final newTiles = List<List<Tile>>.from(state.tiles);
-    newTiles[entity.pos.row][entity.pos.col] = oldTile;
-    newTiles[newPos.row][newPos.col] = newTile;
-    
-    // Update entity position
+    // Update entity position first
     final updatedEntity = entity.copyWith(pos: newPos);
-    _updateEntity(updatedEntity);
     
-    state = state.copyWith(tiles: newTiles);
+    // Update entity in the appropriate list
+    final newPlayers = List<Entity>.from(state.players);
+    final newEnemies = List<Entity>.from(state.enemies);
+
+    if (updatedEntity.isPlayerControlled) {
+      final index = newPlayers.indexWhere((e) => e.id == updatedEntity.id);
+      if (index != -1) {
+        newPlayers[index] = updatedEntity;
+      }
+    } else {
+      final index = newEnemies.indexWhere((e) => e.id == updatedEntity.id);
+      if (index != -1) {
+        newEnemies[index] = updatedEntity;
+      }
+    }
     
-    // Record move action
+    // Rebuild tiles from scratch based on all entity positions
+    final newTiles = _rebuildTilesFromEntities(newPlayers, newEnemies);
+    
+    // Single atomic state update
+    state = state.copyWith(
+      tiles: newTiles,
+      players: newPlayers,
+      enemies: newEnemies,
+    );
+    
+    // Record move action with correct original position
     _recordEntry(BattleLogEntry(
       ts: DateTime.now(),
       round: state.roundNumber,
       turnIndex: state.turnIndexInRound,
       actorId: entity.id,
       action: BattleAction.move,
-      fromPos: (row: entity.pos.row, col: entity.pos.col),
+      fromPos: (row: originalPos.row, col: originalPos.col),
       toPos: (row: newPos.row, col: newPos.col),
       message: '${entity.name} moved to (${newPos.row},${newPos.col})',
     ));
+  }
+  
+  /// Rebuild tiles from scratch based on entity positions
+  List<List<Tile>> _rebuildTilesFromEntities(List<Entity> players, List<Entity> enemies) {
+    // Create empty tiles
+    final tiles = List.generate(state.rows, (row) => 
+      List.generate(state.cols, (col) => Tile(row: row, col: col)));
+    
+    // Place all entities on their respective tiles
+    final allEntities = [...players, ...enemies];
+    for (final entity in allEntities) {
+      if (entity.alive) {
+        tiles[entity.pos.row][entity.pos.col] = tiles[entity.pos.row][entity.pos.col]
+            .copyWith(entityId: entity.id);
+      }
+    }
+    
+    return tiles;
   }
 
   /// Handle move selection
@@ -647,7 +692,8 @@ class BattleController extends StateNotifier<BattleState> {
     if (tile.entityId == null) return;
 
     final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
-    if (!target.isPlayerControlled || target.id == state.activeEntityId) return;
+    // Can only punch enemies (not player controlled) and not yourself
+    if (target.isPlayerControlled || target.id == state.activeEntityId) return;
 
     actPunch(target.id);
     _clearHighlights();

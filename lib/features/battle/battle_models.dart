@@ -397,4 +397,5 @@ class BattleStrings {
   static const String hp = 'HP';
   static const String cp = 'CP';
   static const String debugMode = 'Debug Mode';
+  static const String cancel = 'Cancel';
 }

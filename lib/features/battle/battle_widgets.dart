@@ -29,7 +29,6 @@ class StatBar extends StatelessWidget {
     
     return SizedBox(
       width: width,
-      height: height,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -41,7 +40,7 @@ class StatBar extends StatelessWidget {
           const SizedBox(height: 2),
           Container(
             width: width,
-            height: height - 16,
+            height: 12, // Fixed height for progress bar
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(4),
@@ -369,7 +368,7 @@ class EntityStatus extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
@@ -377,6 +376,7 @@ class EntityStatus extends ConsumerWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             entity.name,
@@ -384,7 +384,7 @@ class EntityStatus extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           StatBar(
             current: entity.hp,
             max: entity.hpMax,
@@ -392,7 +392,7 @@ class EntityStatus extends ConsumerWidget {
             label: BattleStrings.hp,
             width: 120,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           StatBar(
             current: entity.cp,
             max: entity.cpMax,
@@ -483,7 +483,7 @@ class ActionPanel extends ConsumerWidget {
     final canEndTurn = isPlayerTurn && battleState.phase == BattlePhase.selectingAction;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -502,7 +502,7 @@ class ActionPanel extends ConsumerWidget {
           if (activeEntity != null)
             EntityStatus(entityId: activeEntity.id),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Action buttons
           Row(
@@ -557,13 +557,23 @@ class ActionPanel extends ConsumerWidget {
           
           const SizedBox(height: 8),
           
-          ActionButton(
-            text: BattleStrings.endTurn,
-            icon: Icons.skip_next,
-            onPressed: canEndTurn ? () => battleController.endTurn() : null,
-            enabled: canEndTurn,
-            color: Colors.blue,
-          ),
+          // Show cancel button when in move or punch mode
+          if (battleState.isMoveMode || battleState.isPunchMode)
+            ActionButton(
+              text: BattleStrings.cancel,
+              icon: Icons.cancel,
+              onPressed: () => battleController.cancelCurrentMode(),
+              enabled: true,
+              color: Colors.grey,
+            )
+          else
+            ActionButton(
+              text: BattleStrings.endTurn,
+              icon: Icons.skip_next,
+              onPressed: canEndTurn ? () => battleController.endTurn() : null,
+              enabled: canEndTurn,
+              color: Colors.blue,
+            ),
         ],
       ),
     );
