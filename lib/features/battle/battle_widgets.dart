@@ -269,6 +269,16 @@ class BattleTile extends ConsumerWidget {
         borderColor = Colors.grey;
         borderWidth = 1;
         break;
+      case TileHighlight.range:
+        tileColor = Colors.blue.withOpacity(0.4);
+        borderColor = Colors.blue;
+        borderWidth = 2;
+        break;
+      case TileHighlight.invalid:
+        tileColor = Colors.orange.withOpacity(0.5);
+        borderColor = Colors.orange;
+        borderWidth = 2;
+        break;
       case TileHighlight.none:
         break;
     }

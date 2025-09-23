@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_controller.dart';
 import 'battle_widgets.dart';
+import 'battle_formulas.dart';
 import '../../models/battle_costs.dart';
+import '../../models/stats.dart';
 import '../../widgets/bars.dart';
+import '../../controllers/providers.dart';
 
 /// Main battle screen widget
 class BattleScreen extends ConsumerStatefulWidget {
@@ -261,24 +264,43 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
                     // BASIC MOVES
                     _BasicActions(
+                      battleState: battleState,
                       canAfford: (k) => p.ap >= k.ap && p.cp >= k.cp && p.sp >= k.sp,
                       onMove: () {
-                        // open tile selection in your grid then:
-                        // ctrl.movePlayerTo(row, col);
-                        ctrl.toggleMoveMode();
-                      },
-                      onPunch: () {
-                        if (enemy != null) {
-                          ctrl.actPunch(enemy.id);
+                        // If already in move mode, cancel it; otherwise enter move mode
+                        if (battleState.isMoveMode) {
+                          ctrl.cancelCurrentMode();
+                        } else {
+                          ctrl.toggleMoveMode();
                         }
                       },
-                      onHeal: () => ctrl.actHeal(),
+                      onPunch: () {
+                        // If already in punch mode, cancel it; otherwise enter punch mode
+                        if (battleState.isPunchMode) {
+                          ctrl.cancelCurrentMode();
+                        } else {
+                          ctrl.togglePunchMode();
+                        }
+                      },
+                      onHeal: () {
+                        // If already in heal mode, cancel it; otherwise enter heal mode
+                        if (battleState.isHealMode) {
+                          ctrl.cancelCurrentMode();
+                        } else {
+                          ctrl.toggleHealMode();
+                        }
+                      },
+                      onFlee: () {
+                        ctrl.switchToActionMode();
+                        ctrl.actFlee();
+                      },
                     ),
                     const SizedBox(height: 10),
 
                     // JUTSU ROW (keep yours, this is a compact placeholder)
                     _JutsuRow(
                       onTap: (name) {
+                        ctrl.switchToActionMode();
                         // hook into your existing jutsu logic
                       },
                     ),
@@ -537,43 +559,203 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ],
         ),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
               Navigator.of(context).pop(); // Go back to battle grounds
             },
-            child: Text(
-              'Back to Battle Grounds',
-              style: TextStyle(color: theme.primaryColor),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close dialog only, stay on battle screen
-            },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
               foregroundColor: Colors.white,
+              elevation: 4,
             ),
-            child: const Text('View Battle Log'),
+            child: const Text('Back to Battle Grounds'),
+          ),
+          ElevatedButton(
+            onPressed: () => _handleHealAndFightAgain(context, battleState),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              elevation: 4,
+            ),
+            child: const Text('Heal and Fight Again (50 Ryo)'),
           ),
         ],
       ),
     );
   }
+
+  void _handleHealAndFightAgain(BuildContext context, BattleState battleState) async {
+    final theme = Theme.of(context);
+    final playerNotifier = ref.read(playerProvider.notifier);
+    final battleController = ref.read(battleProvider.notifier);
+    
+    // Check if player has enough Ryo
+    final currentPlayer = ref.read(playerProvider);
+    if (currentPlayer.ryo < 50) {
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Insufficient Funds'),
+          content: Text('You need 50 Ryo to heal and fight again. You currently have ${currentPlayer.ryo} Ryo.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Close the current dialog
+    Navigator.of(context).pop();
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text('Healing and preparing for battle...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Deduct 50 Ryo from player
+      final updatedPlayer = currentPlayer.copyWith(ryo: currentPlayer.ryo - 50);
+      playerNotifier.updatePlayer(updatedPlayer);
+
+      // Heal player fully (restore all pools to maximum)
+      final healedStats = currentPlayer.stats.copyWith(
+        currentHP: currentPlayer.stats.maxHp,
+        currentCP: currentPlayer.stats.maxChakra,
+        currentSP: currentPlayer.stats.maxStamina,
+      );
+      final fullyHealedPlayer = updatedPlayer.copyWith(stats: healedStats);
+      playerNotifier.updatePlayer(fullyHealedPlayer);
+
+      // Create fresh battle configuration with new enemies
+      final healedPlayerEntity = Entity(
+        id: 'P1',
+        name: fullyHealedPlayer.name,
+        isPlayerControlled: true,
+        pos: const Position(row: 2, col: 2),
+        hp: fullyHealedPlayer.stats.currentHP ?? 3000,
+        hpMax: fullyHealedPlayer.stats.maxHp,
+        cp: fullyHealedPlayer.stats.currentCP ?? 3000,
+        cpMax: fullyHealedPlayer.stats.maxChakra,
+        sp: fullyHealedPlayer.stats.currentSP ?? 3000,
+        spMax: fullyHealedPlayer.stats.maxStamina,
+        str: fullyHealedPlayer.stats.str,
+        spd: fullyHealedPlayer.stats.spd,
+        intStat: fullyHealedPlayer.stats.intl,
+        wil: fullyHealedPlayer.stats.wil,
+        ap: BalanceConfig.defaultAPMax,
+        apMax: BalanceConfig.defaultAPMax,
+      );
+
+      // Create fresh enemies (same as original battle config but with new IDs)
+      final freshEnemies = [
+        Entity(
+          id: 'E1_${DateTime.now().millisecondsSinceEpoch}', // Unique ID
+          name: 'Enemy 1',
+          isPlayerControlled: false,
+          pos: const Position(row: 2, col: 8),
+          hp: 90,
+          hpMax: 90,
+          cp: 50,
+          cpMax: 50,
+          sp: 30,
+          spMax: 30,
+          str: 5,
+          spd: 5,
+          intStat: 0,
+          wil: 3,
+          ap: BalanceConfig.defaultAPMax,
+          apMax: BalanceConfig.defaultAPMax,
+        ),
+        Entity(
+          id: 'E2_${DateTime.now().millisecondsSinceEpoch}', // Unique ID
+          name: 'Enemy 2',
+          isPlayerControlled: false,
+          pos: const Position(row: 1, col: 9),
+          hp: 80,
+          hpMax: 80,
+          cp: 40,
+          cpMax: 40,
+          sp: 25,
+          spMax: 25,
+          str: 4,
+          spd: 4,
+          intStat: 0,
+          wil: 2,
+          ap: BalanceConfig.defaultAPMax,
+          apMax: BalanceConfig.defaultAPMax,
+        ),
+      ];
+
+      final newBattleConfig = BattleConfig(
+        players: [healedPlayerEntity],
+        enemies: freshEnemies, // Fresh enemies with new IDs
+        rows: 5,
+        cols: 12,
+        rngSeed: DateTime.now().millisecondsSinceEpoch, // New seed for fresh battle
+      );
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Start new battle
+      battleController.startBattle(newBattleConfig);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Healed and ready for battle! (-50 Ryo)'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 }
 
 class _BasicActions extends StatelessWidget {
+  final BattleState battleState;
   final bool Function(ActionCosts) canAfford;
   final VoidCallback onMove;
   final VoidCallback onPunch;
   final VoidCallback onHeal;
+  final VoidCallback onFlee;
 
   const _BasicActions({
+    required this.battleState,
     required this.canAfford,
     required this.onMove,
     required this.onPunch,
     required this.onHeal,
+    required this.onFlee,
   });
 
   Widget _btn({
@@ -582,6 +764,7 @@ class _BasicActions extends StatelessWidget {
     required ActionCosts cost,
     required VoidCallback onTap,
     required bool enabled,
+    bool isActive = false,
   }) {
     return Expanded(
       child: InkWell(
@@ -591,9 +774,16 @@ class _BasicActions extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: enabled ? Colors.blueGrey.shade700 : Colors.blueGrey.shade900,
+            color: isActive 
+                ? Colors.blue[700] 
+                : enabled 
+                    ? Colors.blueGrey.shade700 
+                    : Colors.blueGrey.shade900,
+            border: isActive 
+                ? Border.all(color: Colors.blue[400]!, width: 2)
+                : null,
             boxShadow: [
-              if (enabled)
+              if (enabled || isActive)
                 BoxShadow(
                   blurRadius: 8,
                   offset: const Offset(0, 2),
@@ -607,7 +797,13 @@ class _BasicActions extends StatelessWidget {
               Row(children: [
                 Icon(icon, size: 18),
                 const SizedBox(width: 8),
-                Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  label, 
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                    color: isActive ? Colors.white : null,
+                  ),
+                ),
               ]),
               const SizedBox(height: 8),
               Wrap(spacing: 6, runSpacing: 6, children: [
@@ -641,6 +837,7 @@ class _BasicActions extends StatelessWidget {
           cost: BattleCosts.move,
           onTap: onMove,
           enabled: canAfford(BattleCosts.move),
+          isActive: battleState.isMoveMode,
         ),
         const SizedBox(width: 8),
         _btn(
@@ -649,6 +846,7 @@ class _BasicActions extends StatelessWidget {
           cost: BattleCosts.punch,
           onTap: onPunch,
           enabled: canAfford(BattleCosts.punch),
+          isActive: battleState.isPunchMode,
         ),
         const SizedBox(width: 8),
         _btn(
@@ -657,6 +855,15 @@ class _BasicActions extends StatelessWidget {
           cost: BattleCosts.heal,
           onTap: onHeal,
           enabled: canAfford(BattleCosts.heal),
+          isActive: battleState.isHealMode,
+        ),
+        const SizedBox(width: 8),
+        _btn(
+          label: "Flee",
+          icon: Icons.directions_run,
+          cost: ActionCosts(ap: BalanceConfig.costFlee, cp: 0, sp: 0),
+          onTap: onFlee,
+          enabled: true, // Flee is always available if you have enough AP
         ),
       ],
     );

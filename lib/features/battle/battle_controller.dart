@@ -232,6 +232,7 @@ class BattleController extends StateNotifier<BattleState> {
     state = state.copyWith(
       isMoveMode: newMoveMode,
       isPunchMode: false,
+      isHealMode: false,
       phase: newMoveMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
@@ -240,13 +241,14 @@ class BattleController extends StateNotifier<BattleState> {
     }
   }
 
-  /// Cancel current mode (move or punch)
+  /// Cancel current mode (move, punch, or heal)
   void cancelCurrentMode() {
     if (!state.isPlayersTurn) return;
     
     state = state.copyWith(
       isMoveMode: false,
       isPunchMode: false,
+      isHealMode: false,
       phase: BattlePhase.selectingAction,
     );
     
@@ -263,6 +265,7 @@ class BattleController extends StateNotifier<BattleState> {
     state = state.copyWith(
       isMoveMode: false,
       isPunchMode: false,
+      isHealMode: false,
       phase: BattlePhase.selectingAction,
     );
   }
@@ -279,11 +282,33 @@ class BattleController extends StateNotifier<BattleState> {
     state = state.copyWith(
       isPunchMode: newPunchMode,
       isMoveMode: false,
+      isHealMode: false,
       phase: newPunchMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
     if (newPunchMode) {
       _highlightPunchRange();
+    }
+  }
+
+  /// Toggle heal mode
+  void toggleHealMode() {
+    if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
+    
+    // Clear any existing mode first
+    _clearHighlights();
+    
+    // Toggle heal mode
+    final newHealMode = !state.isHealMode;
+    state = state.copyWith(
+      isHealMode: newHealMode,
+      isMoveMode: false,
+      isPunchMode: false,
+      phase: newHealMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
+    );
+
+    if (newHealMode) {
+      _highlightHealRange();
     }
   }
 
@@ -295,6 +320,8 @@ class BattleController extends StateNotifier<BattleState> {
       _handleMoveSelection(row, col);
     } else if (state.isPunchMode) {
       _handlePunchSelection(row, col);
+    } else if (state.isHealMode) {
+      _handleHealSelection(row, col);
     }
   }
 
@@ -507,6 +534,7 @@ class BattleController extends StateNotifier<BattleState> {
     state = state.copyWith(
       isMoveMode: false,
       isPunchMode: false,
+      isHealMode: false,
       phase: BattlePhase.selectingAction,
     );
     _clearHighlights();
@@ -801,6 +829,52 @@ class BattleController extends StateNotifier<BattleState> {
     );
   }
 
+  /// Handle heal selection
+  void _handleHealSelection(int row, int col) {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    // Check if the selected tile is the player's own tile (0 range)
+    if (activeEntity.pos.row != row || activeEntity.pos.col != col) {
+      _addLog('Heal can only target yourself!');
+      return;
+    }
+
+    // Check and spend resources
+    if (!activeEntity.canAfford(BattleCosts.heal.ap, BattleCosts.heal.cp, BattleCosts.heal.sp)) {
+      _addLog('❌ Not enough resources for Heal (need AP:${BattleCosts.heal.ap}, CP:${BattleCosts.heal.cp}, SP:${BattleCosts.heal.sp}).');
+      return;
+    }
+    
+    final updatedEntity = activeEntity.spend(BattleCosts.heal.ap, BattleCosts.heal.cp, BattleCosts.heal.sp);
+    _updateEntity(updatedEntity);
+    _addLog('− Spent AP:${BattleCosts.heal.ap} CP:${BattleCosts.heal.cp} SP:${BattleCosts.heal.sp} for Heal.');
+
+    // Heal using fixed amount
+    final healedEntity = updatedEntity.heal(BattleCosts.healAmount);
+    _updateEntity(healedEntity);
+    
+    // Record heal action
+    _recordEntry(BattleLogEntry(
+      ts: DateTime.now(),
+      round: state.roundNumber,
+      turnIndex: state.turnIndexInRound,
+      actorId: healedEntity.id,
+      action: BattleAction.heal,
+      heal: BattleCosts.healAmount,
+      message: '✨ ${healedEntity.name} healed +${BattleCosts.healAmount} HP.',
+    ));
+    
+    _clearHighlights();
+    
+    state = state.copyWith(
+      isHealMode: false,
+      phase: BattlePhase.selectingAction,
+    );
+    
+    _endTurn();
+  }
+
   /// Check if position is reachable within range
   bool _isReachable(Position from, Position to, int range) {
     return _manhattanDistance(from, to) <= range;
@@ -937,6 +1011,21 @@ class BattleController extends StateNotifier<BattleState> {
         }
       }
     }
+
+    state = state.copyWith(tiles: newTiles);
+  }
+
+  /// Highlight heal range (only the player's own tile)
+  void _highlightHealRange() {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    final newTiles = List<List<Tile>>.from(state.tiles);
+
+    // Highlight only the player's own tile for healing (0 range)
+    newTiles[activeEntity.pos.row][activeEntity.pos.col] = 
+        newTiles[activeEntity.pos.row][activeEntity.pos.col]
+            .copyWith(highlight: TileHighlight.target);
 
     state = state.copyWith(tiles: newTiles);
   }

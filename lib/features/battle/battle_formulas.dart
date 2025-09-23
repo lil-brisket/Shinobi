@@ -45,7 +45,7 @@ class BalanceConfig {
   static const int costMove = 20;
   static const int costPunch = 20;
   static const int costHeal = 20;
-  static const int costFlee = 30;
+  static const int costFlee = 100;
 
   // Safety clamps
   static const int minDamage = 1;

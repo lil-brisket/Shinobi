@@ -14,6 +14,8 @@ enum TileHighlight {
   move,
   target,
   blocked,
+  range,
+  invalid,
 }
 
 /// Battle action types for logging
@@ -291,6 +293,7 @@ class BattleState {
   final int rngSeed;
   final bool isMoveMode;
   final bool isPunchMode;
+  final bool isHealMode;
   final int moveRange;
   
   // Round-based logging
@@ -312,6 +315,7 @@ class BattleState {
     required this.rngSeed,
     this.isMoveMode = false,
     this.isPunchMode = false,
+    this.isHealMode = false,
     this.moveRange = 3,
     this.roundNumber = 1,
     this.turnIndexInRound = 0,
@@ -357,6 +361,7 @@ class BattleState {
     int? rngSeed,
     bool? isMoveMode,
     bool? isPunchMode,
+    bool? isHealMode,
     int? moveRange,
     int? roundNumber,
     int? turnIndexInRound,
@@ -376,6 +381,7 @@ class BattleState {
       rngSeed: rngSeed ?? this.rngSeed,
       isMoveMode: isMoveMode ?? this.isMoveMode,
       isPunchMode: isPunchMode ?? this.isPunchMode,
+      isHealMode: isHealMode ?? this.isHealMode,
       moveRange: moveRange ?? this.moveRange,
       roundNumber: roundNumber ?? this.roundNumber,
       turnIndexInRound: turnIndexInRound ?? this.turnIndexInRound,
