@@ -120,7 +120,7 @@ class ClanService {
   // Board queries
   Future<List<ClanBoardPost>> getBoard(String clanId, {String? cursor}) async {
     try {
-      var query = _supabase
+      final response = await _supabase
           .from('clan_board_posts')
           .select('*')
           .eq('clan_id', clanId)
@@ -128,11 +128,6 @@ class ClanService {
           .order('created_at', ascending: false)
           .limit(20);
 
-      if (cursor != null) {
-        query = query.lt('created_at', cursor);
-      }
-
-      final response = await query;
       return (response as List)
           .map((json) => ClanBoardPost.fromJson(json))
           .toList();

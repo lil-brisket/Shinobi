@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../models/clan.dart';
 import '../../../models/clan_member.dart';
+import '../../../controllers/clan_providers.dart';
 import '../tabs/overview_tab.dart';
 import '../tabs/members_tab.dart';
 import '../tabs/board_tab.dart';
@@ -35,7 +36,8 @@ class _ClanTabsState extends ConsumerState<ClanTabs> with TickerProviderStateMix
   }
 
   void _buildTabs() {
-    final currentMember = ref.read(currentClanMemberProvider).value;
+    final currentMemberAsync = ref.read(currentClanMemberProvider);
+    final currentMember = currentMemberAsync.value;
     
     _tabs = [
       OverviewTab(clan: widget.clan),

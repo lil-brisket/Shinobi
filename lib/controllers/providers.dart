@@ -296,30 +296,10 @@ final clanProvider = StateProvider<Clan?>((ref) {
   return Clan(
     id: 'clan_001',
     name: 'Uzumaki Clan',
+    villageId: 'village_001',
     description: 'Ancient clan known for their sealing techniques',
-    rank: 'A',
     leaderId: 'player_001',
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
-    members: [
-      ClanMember(
-        id: 'player_001',
-        name: 'Naruto_Uzumaki',
-        rank: 'Leader',
-        joinedAt: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-      ClanMember(
-        id: 'player_002',
-        name: 'Kushina_Uzumaki',
-        rank: 'Vice Leader',
-        joinedAt: DateTime.now().subtract(const Duration(days: 25)),
-      ),
-      ClanMember(
-        id: 'player_003',
-        name: 'Karin_Uzumaki',
-        rank: 'Member',
-        joinedAt: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-    ],
   );
 });
 

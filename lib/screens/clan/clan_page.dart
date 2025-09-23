@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../controllers/clan_providers.dart';
-import '../../models/clan_member.dart';
 import 'widgets/browse_clans.dart';
 import 'widgets/clan_tabs.dart';
 
@@ -18,7 +17,6 @@ class _ClanPageState extends ConsumerState<ClanPage> {
   @override
   Widget build(BuildContext context) {
     final currentClan = ref.watch(currentClanProvider);
-    final myApplication = ref.watch(myApplicationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -91,6 +89,7 @@ class _ClanPageState extends ConsumerState<ClanPage> {
   }
 
   Widget _buildClanView(clan) {
+    final myApplication = ref.watch(myApplicationProvider);
     return myApplication.when(
       data: (application) {
         // Show pending application banner if user has one

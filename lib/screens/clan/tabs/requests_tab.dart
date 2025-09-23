@@ -95,7 +95,7 @@ class RequestsTab extends ConsumerWidget {
                 itemCount: requestsList.length,
                 itemBuilder: (context, index) {
                   final request = requestsList[index];
-                  return _buildRequestCard(context, request);
+                  return _buildRequestCard(context, ref, request);
                 },
               );
             },
@@ -137,7 +137,7 @@ class RequestsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildRequestCard(BuildContext context, ClanApplicationWithDetails request) {
+  Widget _buildRequestCard(BuildContext context, WidgetRef ref, ClanApplicationWithDetails request) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -240,7 +240,7 @@ class RequestsTab extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => _showRejectDialog(context, request),
+                  onPressed: () => _showRejectDialog(context, ref, request),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.hpColor,
                     side: const BorderSide(color: AppTheme.hpColor),
@@ -251,7 +251,7 @@ class RequestsTab extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _showApproveDialog(context, request),
+                  onPressed: () => _showApproveDialog(context, ref, request),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.staminaColor,
                     foregroundColor: Colors.white,
@@ -281,7 +281,7 @@ class RequestsTab extends ConsumerWidget {
     }
   }
 
-  void _showApproveDialog(BuildContext context, ClanApplicationWithDetails request) {
+  void _showApproveDialog(BuildContext context, WidgetRef ref, ClanApplicationWithDetails request) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -314,7 +314,7 @@ class RequestsTab extends ConsumerWidget {
     );
   }
 
-  void _showRejectDialog(BuildContext context, ClanApplicationWithDetails request) {
+  void _showRejectDialog(BuildContext context, WidgetRef ref, ClanApplicationWithDetails request) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -4,7 +4,6 @@ import '../models/clan_member.dart';
 import '../models/clan_application.dart';
 import '../models/clan_board_post.dart';
 import '../services/clan_service.dart';
-import '../utils/snackbar_utils.dart';
 
 // Service provider
 final clanServiceProvider = Provider<ClanService>((ref) => ClanService());
@@ -201,6 +200,18 @@ class ClanNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref ref;
   
   ClanNotifier(this.ref) : super(const AsyncValue.data(null));
+
+  void showSuccessSnackbar(String message) {
+    // This will be handled by the UI layer
+    // For now, we'll just print to console
+    print('Success: $message');
+  }
+
+  void showErrorSnackbar(String message) {
+    // This will be handled by the UI layer
+    // For now, we'll just print to console
+    print('Error: $message');
+  }
 
   Future<void> applyToClan(String clanId, {String? message}) async {
     state = const AsyncValue.loading();
