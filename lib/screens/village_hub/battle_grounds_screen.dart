@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
+import '../../features/battle/battle_screen.dart';
+import '../../features/battle/battle_models.dart';
+import '../../features/battle/battle_controller.dart';
 
 class BattleGroundsScreen extends ConsumerWidget {
   const BattleGroundsScreen({super.key});
@@ -347,11 +350,157 @@ class BattleGroundsScreen extends ConsumerWidget {
   }
 
   void _startBattle(BuildContext context, String enemyName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Battle system coming soon! Prepare to fight $enemyName!'),
-        backgroundColor: AppTheme.accentColor,
+    // Create battle configuration based on enemy
+    final battleConfig = _createBattleConfig(enemyName);
+    
+    // Start the battle with the configuration
+    final battleController = ProviderScope.containerOf(context).read(battleProvider.notifier);
+    battleController.startBattle(battleConfig);
+    
+    // Navigate to battle screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BattleScreen(),
       ),
     );
+  }
+
+  BattleConfig _createBattleConfig(String enemyName) {
+    // Create player entity (you can customize these stats based on your game's character system)
+    final player = Entity(
+      id: 'P1',
+      name: 'You',
+      isPlayerControlled: true,
+      pos: const Position(row: 2, col: 2),
+      hp: 100,
+      hpMax: 100,
+      cp: 30,
+      cpMax: 30,
+      sp: 50,
+      spMax: 50,
+      str: 6,
+      spd: 7,
+      intStat: 5,
+      wil: 4,
+    );
+
+    // Create enemy based on the selected challenge
+    final enemy = _createEnemy(enemyName);
+
+    return BattleConfig(
+      players: [player],
+      enemies: [enemy],
+      rows: 5,
+      cols: 12,
+      rngSeed: DateTime.now().millisecondsSinceEpoch % 1000, // Random seed
+    );
+  }
+
+  Entity _createEnemy(String enemyName) {
+    switch (enemyName) {
+      case 'Bandit Thug':
+        return Entity(
+          id: 'E1',
+          name: 'Bandit Thug',
+          isPlayerControlled: false,
+          pos: const Position(row: 2, col: 8),
+          hp: 60,
+          hpMax: 60,
+          cp: 0,
+          cpMax: 0,
+          sp: 20,
+          spMax: 20,
+          str: 4,
+          spd: 5,
+          intStat: 0,
+          wil: 2,
+        );
+      case 'Rogue Ninja':
+        return Entity(
+          id: 'E1',
+          name: 'Rogue Ninja',
+          isPlayerControlled: false,
+          pos: const Position(row: 1, col: 9),
+          hp: 120,
+          hpMax: 120,
+          cp: 0,
+          cpMax: 0,
+          sp: 40,
+          spMax: 40,
+          str: 8,
+          spd: 10,
+          intStat: 0,
+          wil: 3,
+        );
+      case 'Elite Guard':
+        return Entity(
+          id: 'E1',
+          name: 'Elite Guard',
+          isPlayerControlled: false,
+          pos: const Position(row: 3, col: 8),
+          hp: 180,
+          hpMax: 180,
+          cp: 0,
+          cpMax: 0,
+          sp: 60,
+          spMax: 60,
+          str: 12,
+          spd: 6,
+          intStat: 0,
+          wil: 8,
+        );
+      case 'Dark Ninja':
+        return Entity(
+          id: 'E1',
+          name: 'Dark Ninja',
+          isPlayerControlled: false,
+          pos: const Position(row: 2, col: 9),
+          hp: 240,
+          hpMax: 240,
+          cp: 0,
+          cpMax: 0,
+          sp: 80,
+          spMax: 80,
+          str: 16,
+          spd: 14,
+          intStat: 0,
+          wil: 5,
+        );
+      case 'Legendary Warrior':
+        return Entity(
+          id: 'E1',
+          name: 'Legendary Warrior',
+          isPlayerControlled: false,
+          pos: const Position(row: 1, col: 10),
+          hp: 300,
+          hpMax: 300,
+          cp: 0,
+          cpMax: 0,
+          sp: 100,
+          spMax: 100,
+          str: 20,
+          spd: 8,
+          intStat: 0,
+          wil: 12,
+        );
+      default:
+        // Default enemy
+        return Entity(
+          id: 'E1',
+          name: 'Unknown Enemy',
+          isPlayerControlled: false,
+          pos: const Position(row: 2, col: 8),
+          hp: 90,
+          hpMax: 90,
+          cp: 0,
+          cpMax: 0,
+          sp: 30,
+          spMax: 30,
+          str: 5,
+          spd: 5,
+          intStat: 0,
+          wil: 3,
+        );
+    }
   }
 }
