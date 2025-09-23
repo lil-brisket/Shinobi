@@ -224,15 +224,18 @@ class BattleController extends StateNotifier<BattleState> {
   void toggleMoveMode() {
     if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
     
+    // Clear any existing mode first
+    _clearHighlights();
+    
+    // Toggle move mode
+    final newMoveMode = !state.isMoveMode;
     state = state.copyWith(
-      isMoveMode: !state.isMoveMode,
+      isMoveMode: newMoveMode,
       isPunchMode: false,
-      phase: state.isMoveMode ? BattlePhase.selectingAction : BattlePhase.selectingTile,
+      phase: newMoveMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
-    if (!state.isMoveMode) {
-      _clearHighlights();
-    } else {
+    if (newMoveMode) {
       _highlightReachableTiles();
     }
   }
@@ -250,26 +253,37 @@ class BattleController extends StateNotifier<BattleState> {
     _clearHighlights();
   }
 
+  /// Switch to a different action mode (clears current mode first)
+  void switchToActionMode() {
+    if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
+    
+    // Clear any existing mode
+    _clearHighlights();
+    
+    state = state.copyWith(
+      isMoveMode: false,
+      isPunchMode: false,
+      phase: BattlePhase.selectingAction,
+    );
+  }
+
   /// Toggle punch mode
   void togglePunchMode() {
     if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
     
-    final adjacentEnemies = _getAdjacentEnemies(state.activeEntityId);
-    if (adjacentEnemies.isEmpty) {
-      _addLog(BattleStrings.noAdjacentTargets);
-      return;
-    }
-
+    // Clear any existing mode first
+    _clearHighlights();
+    
+    // Toggle punch mode
+    final newPunchMode = !state.isPunchMode;
     state = state.copyWith(
-      isPunchMode: !state.isPunchMode,
+      isPunchMode: newPunchMode,
       isMoveMode: false,
-      phase: state.isPunchMode ? BattlePhase.selectingAction : BattlePhase.selectingTile,
+      phase: newPunchMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
-    if (!state.isPunchMode) {
-      _clearHighlights();
-    } else {
-      _highlightTargetTiles();
+    if (newPunchMode) {
+      _highlightPunchRange();
     }
   }
 
@@ -293,9 +307,9 @@ class BattleController extends StateNotifier<BattleState> {
     
     if (activeEntity == null || !target.alive) return;
 
-    // Check if target is adjacent
-    if (!_isAdjacent(activeEntity.pos, target.pos)) {
-      _addLog(BattleStrings.noAdjacentTargets);
+    // Check if target is within punch range (1 square radius)
+    if (_manhattanDistance(activeEntity.pos, target.pos) > 1) {
+      _addLog('Target is out of punch range!');
       return;
     }
 
@@ -350,6 +364,37 @@ class BattleController extends StateNotifier<BattleState> {
       ));
     }
 
+    _endTurn();
+  }
+
+  /// Execute punch action on empty space (miss)
+  void actPunchMiss(Position targetPos) {
+    if (!state.isPlayersTurn || state.phase != BattlePhase.selectingAction) return;
+    
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    // Check and spend resources
+    if (!activeEntity.canAfford(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp)) {
+      _addLog('❌ Not enough resources for Punch (need AP:${BattleCosts.punch.ap}, CP:${BattleCosts.punch.cp}, SP:${BattleCosts.punch.sp}).');
+      return;
+    }
+    
+    final updatedActiveEntity = activeEntity.spend(BattleCosts.punch.ap, BattleCosts.punch.cp, BattleCosts.punch.sp);
+    _updateEntity(updatedActiveEntity);
+    _addLog('− Spent AP:${BattleCosts.punch.ap} CP:${BattleCosts.punch.cp} SP:${BattleCosts.punch.sp} for Punch.');
+    
+    // Record punch miss
+    _recordEntry(BattleLogEntry(
+      ts: DateTime.now(),
+      round: state.roundNumber,
+      turnIndex: state.turnIndexInRound,
+      actorId: updatedActiveEntity.id,
+      action: BattleAction.punch,
+      message: '👊 ${updatedActiveEntity.name} punched at empty space (${targetPos.row},${targetPos.col}) - Miss!',
+    ));
+
+    _addLog('👊 ${updatedActiveEntity.name} punched at empty space - Miss!');
     _endTurn();
   }
 
@@ -538,14 +583,14 @@ class BattleController extends StateNotifier<BattleState> {
       }
     }
 
-    // Check if adjacent to a player - punch the weakest
-    final adjacentPlayers = _getAdjacentEnemies(enemy.id)
+    // Check if within punch range of a player - punch the weakest
+    final nearbyPlayers = _getNearbyEnemies(enemy.id, 1)
         .where((e) => e.isPlayerControlled)
         .toList();
     
-    if (adjacentPlayers.isNotEmpty) {
-      // Find weakest adjacent player
-      final weakest = adjacentPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
+    if (nearbyPlayers.isNotEmpty) {
+      // Find weakest nearby player
+      final weakest = nearbyPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
       _actPunchInternal(enemy, weakest.id);
       return;
     }
@@ -559,12 +604,12 @@ class BattleController extends StateNotifier<BattleState> {
     // After moving, check if we can punch
     final updatedEnemy = state.activeEntity;
     if (updatedEnemy != null) {
-      final newAdjacentPlayers = _getAdjacentEnemies(updatedEnemy.id)
+      final newNearbyPlayers = _getNearbyEnemies(updatedEnemy.id, 1)
           .where((e) => e.isPlayerControlled)
           .toList();
       
-      if (newAdjacentPlayers.isNotEmpty) {
-        final weakest = newAdjacentPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
+      if (newNearbyPlayers.isNotEmpty) {
+        final weakest = newNearbyPlayers.reduce((a, b) => a.hp < b.hp ? a : b);
         _actPunchInternal(updatedEnemy, weakest.id);
         return;
       }
@@ -722,14 +767,32 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Handle punch selection
   void _handlePunchSelection(int row, int col) {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    // Check if the selected tile is within punch range
+    final distance = _manhattanDistance(activeEntity.pos, Position(row: row, col: col));
+    if (distance > 1) {
+      _addLog('Target is out of punch range!');
+      return;
+    }
+
     final tile = state.tiles[row][col];
-    if (tile.entityId == null) return;
-
-    final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
-    // Can only punch enemies (not player controlled) and not yourself
-    if (target.isPlayerControlled || target.id == state.activeEntityId) return;
-
-    actPunch(target.id);
+    
+    // If there's an entity on the tile, try to punch it
+    if (tile.entityId != null) {
+      final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+      // Can only punch enemies (not player controlled) and not yourself
+      if (target.isPlayerControlled || target.id == state.activeEntityId) {
+        _addLog('Cannot punch allies or yourself!');
+        return;
+      }
+      actPunch(target.id);
+    } else {
+      // Punch empty space - miss but still spend resources
+      actPunchMiss(Position(row: row, col: col));
+    }
+    
     _clearHighlights();
     
     state = state.copyWith(
@@ -766,34 +829,33 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Internal method to get adjacent enemies
   List<Entity> _getAdjacentEnemies(String entityId) {
+    return _getNearbyEnemies(entityId, 1);
+  }
+
+  /// Get enemies within a certain radius (Manhattan distance)
+  List<Entity> _getNearbyEnemies(String entityId, int radius) {
     final entity = state.allEntities.firstWhere((e) => e.id == entityId);
-    final adjacent = <Entity>[];
+    final nearby = <Entity>[];
 
-    // Check all 4 directions
-    final directions = [
-      Position(row: -1, col: 0), // Up
-      Position(row: 1, col: 0),  // Down
-      Position(row: 0, col: -1), // Left
-      Position(row: 0, col: 1),  // Right
-    ];
-
-    for (final dir in directions) {
-      final checkPos = Position(row: entity.pos.row + dir.row, col: entity.pos.col + dir.col);
-      
-      if (checkPos.row >= 0 && checkPos.row < state.rows &&
-          checkPos.col >= 0 && checkPos.col < state.cols) {
+    // Check all tiles within the radius
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final checkPos = Position(row: row, col: col);
+        final distance = _manhattanDistance(entity.pos, checkPos);
         
-        final tile = state.tiles[checkPos.row][checkPos.col];
-        if (tile.entityId != null) {
-          final adjacentEntity = state.allEntities.firstWhere((e) => e.id == tile.entityId);
-          if (adjacentEntity.alive && adjacentEntity.isPlayerControlled != entity.isPlayerControlled) {
-            adjacent.add(adjacentEntity);
+        if (distance <= radius && distance > 0) { // Within range but not the same position
+          final tile = state.tiles[row][col];
+          if (tile.entityId != null) {
+            final nearbyEntity = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+            if (nearbyEntity.alive && nearbyEntity.isPlayerControlled != entity.isPlayerControlled) {
+              nearby.add(nearbyEntity);
+            }
           }
         }
       }
     }
 
-    return adjacent;
+    return nearby;
   }
 
   /// Check if two positions are adjacent
@@ -830,12 +892,50 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Highlight target tiles for punching
   void _highlightTargetTiles() {
-    final adjacentEnemies = _getAdjacentEnemies(state.activeEntityId);
+    final nearbyEnemies = _getNearbyEnemies(state.activeEntityId, 1);
     final newTiles = List<List<Tile>>.from(state.tiles);
 
-    for (final enemy in adjacentEnemies) {
+    for (final enemy in nearbyEnemies) {
       newTiles[enemy.pos.row][enemy.pos.col] = newTiles[enemy.pos.row][enemy.pos.col]
           .copyWith(highlight: TileHighlight.target);
+    }
+
+    state = state.copyWith(tiles: newTiles);
+  }
+
+  /// Highlight all tiles within punch range
+  void _highlightPunchRange() {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    final newTiles = List<List<Tile>>.from(state.tiles);
+
+    // Highlight all tiles within punch range (1 square radius) including diagonals
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final distance = _manhattanDistance(activeEntity.pos, Position(row: row, col: col));
+        
+        if (distance <= 1 && distance > 0) { // Within range but not the same position
+          final tile = state.tiles[row][col];
+          
+          if (tile.entityId != null) {
+            final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+            // Highlight enemy tiles as valid targets (including diagonal enemies)
+            if (!target.isPlayerControlled && target.id != activeEntity.id) {
+              newTiles[row][col] = newTiles[row][col]
+                  .copyWith(highlight: TileHighlight.target);
+            } else {
+              // Highlight ally/self tiles as invalid targets (range but can't punch)
+              newTiles[row][col] = newTiles[row][col]
+                  .copyWith(highlight: TileHighlight.invalid);
+            }
+          } else {
+            // Highlight empty tiles as punchable range (can punch but will miss)
+            newTiles[row][col] = newTiles[row][col]
+                .copyWith(highlight: TileHighlight.range);
+          }
+        }
+      }
     }
 
     state = state.copyWith(tiles: newTiles);
@@ -1020,9 +1120,9 @@ class BattleController extends StateNotifier<BattleState> {
     
     if (!target.alive) return;
 
-    // Check if target is adjacent
-    if (!_isAdjacent(actor.pos, target.pos)) {
-      _addLog(BattleStrings.noAdjacentTargets);
+    // Check if target is within punch range (1 square radius)
+    if (_manhattanDistance(actor.pos, target.pos) > 1) {
+      _addLog('Target is out of punch range!');
       return;
     }
 
