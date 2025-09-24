@@ -24,6 +24,7 @@ enum BattleAction {
   punch,
   heal,
   flee,
+  jutsu,
   endTurn,
   startRound,
   endRound,
@@ -294,6 +295,9 @@ class BattleState {
   final bool isMoveMode;
   final bool isPunchMode;
   final bool isHealMode;
+  final bool isJutsuMode;
+  final String? selectedJutsuId;
+  final int? selectedJutsuRange; // For variable range jutsus like Rasengan
   final int moveRange;
   
   // Round-based logging
@@ -316,6 +320,9 @@ class BattleState {
     this.isMoveMode = false,
     this.isPunchMode = false,
     this.isHealMode = false,
+    this.isJutsuMode = false,
+    this.selectedJutsuId,
+    this.selectedJutsuRange,
     this.moveRange = 3,
     this.roundNumber = 1,
     this.turnIndexInRound = 0,
@@ -362,6 +369,9 @@ class BattleState {
     bool? isMoveMode,
     bool? isPunchMode,
     bool? isHealMode,
+    bool? isJutsuMode,
+    String? selectedJutsuId,
+    int? selectedJutsuRange,
     int? moveRange,
     int? roundNumber,
     int? turnIndexInRound,
@@ -382,6 +392,9 @@ class BattleState {
       isMoveMode: isMoveMode ?? this.isMoveMode,
       isPunchMode: isPunchMode ?? this.isPunchMode,
       isHealMode: isHealMode ?? this.isHealMode,
+      isJutsuMode: isJutsuMode ?? this.isJutsuMode,
+      selectedJutsuId: selectedJutsuId ?? this.selectedJutsuId,
+      selectedJutsuRange: selectedJutsuRange ?? this.selectedJutsuRange,
       moveRange: moveRange ?? this.moveRange,
       roundNumber: roundNumber ?? this.roundNumber,
       turnIndexInRound: turnIndexInRound ?? this.turnIndexInRound,

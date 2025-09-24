@@ -14,6 +14,12 @@ _$JutsuImpl _$$JutsuImplFromJson(Map<String, dynamic> json) => _$JutsuImpl(
       power: (json['power'] as num).toInt(),
       description: json['description'] as String,
       isEquipped: json['isEquipped'] as bool? ?? false,
+      range: (json['range'] as num?)?.toInt() ?? 1,
+      targeting:
+          $enumDecodeNullable(_$JutsuTargetingEnumMap, json['targeting']) ??
+              JutsuTargeting.singleTarget,
+      areaRadius: (json['areaRadius'] as num?)?.toInt() ?? 0,
+      apCost: (json['apCost'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$JutsuImplToJson(_$JutsuImpl instance) =>
@@ -25,6 +31,10 @@ Map<String, dynamic> _$$JutsuImplToJson(_$JutsuImpl instance) =>
       'power': instance.power,
       'description': instance.description,
       'isEquipped': instance.isEquipped,
+      'range': instance.range,
+      'targeting': _$JutsuTargetingEnumMap[instance.targeting]!,
+      'areaRadius': instance.areaRadius,
+      'apCost': instance.apCost,
     };
 
 const _$JutsuTypeEnumMap = {
@@ -32,4 +42,11 @@ const _$JutsuTypeEnumMap = {
   JutsuType.taijutsu: 'taijutsu',
   JutsuType.genjutsu: 'genjutsu',
   JutsuType.kekkeiGenkai: 'kekkeiGenkai',
+};
+
+const _$JutsuTargetingEnumMap = {
+  JutsuTargeting.straightLine: 'straight_line',
+  JutsuTargeting.areaAroundPlayer: 'area_around_player',
+  JutsuTargeting.singleTarget: 'single_target',
+  JutsuTargeting.movementAbility: 'movement_ability',
 };

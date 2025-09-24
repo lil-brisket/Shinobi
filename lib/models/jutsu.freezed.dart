@@ -27,6 +27,11 @@ mixin _$Jutsu {
   int get power => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
   bool get isEquipped => throw _privateConstructorUsedError;
+  int get range => throw _privateConstructorUsedError;
+  JutsuTargeting get targeting => throw _privateConstructorUsedError;
+  int get areaRadius =>
+      throw _privateConstructorUsedError; // For area effects around target or player
+  int get apCost => throw _privateConstructorUsedError;
 
   /// Serializes this Jutsu to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -49,7 +54,11 @@ abstract class $JutsuCopyWith<$Res> {
       int chakraCost,
       int power,
       String description,
-      bool isEquipped});
+      bool isEquipped,
+      int range,
+      JutsuTargeting targeting,
+      int areaRadius,
+      int apCost});
 }
 
 /// @nodoc
@@ -74,6 +83,10 @@ class _$JutsuCopyWithImpl<$Res, $Val extends Jutsu>
     Object? power = null,
     Object? description = null,
     Object? isEquipped = null,
+    Object? range = null,
+    Object? targeting = null,
+    Object? areaRadius = null,
+    Object? apCost = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -104,6 +117,22 @@ class _$JutsuCopyWithImpl<$Res, $Val extends Jutsu>
           ? _value.isEquipped
           : isEquipped // ignore: cast_nullable_to_non_nullable
               as bool,
+      range: null == range
+          ? _value.range
+          : range // ignore: cast_nullable_to_non_nullable
+              as int,
+      targeting: null == targeting
+          ? _value.targeting
+          : targeting // ignore: cast_nullable_to_non_nullable
+              as JutsuTargeting,
+      areaRadius: null == areaRadius
+          ? _value.areaRadius
+          : areaRadius // ignore: cast_nullable_to_non_nullable
+              as int,
+      apCost: null == apCost
+          ? _value.apCost
+          : apCost // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -122,7 +151,11 @@ abstract class _$$JutsuImplCopyWith<$Res> implements $JutsuCopyWith<$Res> {
       int chakraCost,
       int power,
       String description,
-      bool isEquipped});
+      bool isEquipped,
+      int range,
+      JutsuTargeting targeting,
+      int areaRadius,
+      int apCost});
 }
 
 /// @nodoc
@@ -145,6 +178,10 @@ class __$$JutsuImplCopyWithImpl<$Res>
     Object? power = null,
     Object? description = null,
     Object? isEquipped = null,
+    Object? range = null,
+    Object? targeting = null,
+    Object? areaRadius = null,
+    Object? apCost = null,
   }) {
     return _then(_$JutsuImpl(
       id: null == id
@@ -175,6 +212,22 @@ class __$$JutsuImplCopyWithImpl<$Res>
           ? _value.isEquipped
           : isEquipped // ignore: cast_nullable_to_non_nullable
               as bool,
+      range: null == range
+          ? _value.range
+          : range // ignore: cast_nullable_to_non_nullable
+              as int,
+      targeting: null == targeting
+          ? _value.targeting
+          : targeting // ignore: cast_nullable_to_non_nullable
+              as JutsuTargeting,
+      areaRadius: null == areaRadius
+          ? _value.areaRadius
+          : areaRadius // ignore: cast_nullable_to_non_nullable
+              as int,
+      apCost: null == apCost
+          ? _value.apCost
+          : apCost // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -189,7 +242,11 @@ class _$JutsuImpl implements _Jutsu {
       required this.chakraCost,
       required this.power,
       required this.description,
-      this.isEquipped = false});
+      this.isEquipped = false,
+      this.range = 1,
+      this.targeting = JutsuTargeting.singleTarget,
+      this.areaRadius = 0,
+      this.apCost = 0});
 
   factory _$JutsuImpl.fromJson(Map<String, dynamic> json) =>
       _$$JutsuImplFromJson(json);
@@ -209,10 +266,23 @@ class _$JutsuImpl implements _Jutsu {
   @override
   @JsonKey()
   final bool isEquipped;
+  @override
+  @JsonKey()
+  final int range;
+  @override
+  @JsonKey()
+  final JutsuTargeting targeting;
+  @override
+  @JsonKey()
+  final int areaRadius;
+// For area effects around target or player
+  @override
+  @JsonKey()
+  final int apCost;
 
   @override
   String toString() {
-    return 'Jutsu(id: $id, name: $name, type: $type, chakraCost: $chakraCost, power: $power, description: $description, isEquipped: $isEquipped)';
+    return 'Jutsu(id: $id, name: $name, type: $type, chakraCost: $chakraCost, power: $power, description: $description, isEquipped: $isEquipped, range: $range, targeting: $targeting, areaRadius: $areaRadius, apCost: $apCost)';
   }
 
   @override
@@ -229,13 +299,19 @@ class _$JutsuImpl implements _Jutsu {
             (identical(other.description, description) ||
                 other.description == description) &&
             (identical(other.isEquipped, isEquipped) ||
-                other.isEquipped == isEquipped));
+                other.isEquipped == isEquipped) &&
+            (identical(other.range, range) || other.range == range) &&
+            (identical(other.targeting, targeting) ||
+                other.targeting == targeting) &&
+            (identical(other.areaRadius, areaRadius) ||
+                other.areaRadius == areaRadius) &&
+            (identical(other.apCost, apCost) || other.apCost == apCost));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, name, type, chakraCost, power, description, isEquipped);
+  int get hashCode => Object.hash(runtimeType, id, name, type, chakraCost,
+      power, description, isEquipped, range, targeting, areaRadius, apCost);
 
   /// Create a copy of Jutsu
   /// with the given fields replaced by the non-null parameter values.
@@ -261,7 +337,11 @@ abstract class _Jutsu implements Jutsu {
       required final int chakraCost,
       required final int power,
       required final String description,
-      final bool isEquipped}) = _$JutsuImpl;
+      final bool isEquipped,
+      final int range,
+      final JutsuTargeting targeting,
+      final int areaRadius,
+      final int apCost}) = _$JutsuImpl;
 
   factory _Jutsu.fromJson(Map<String, dynamic> json) = _$JutsuImpl.fromJson;
 
@@ -279,6 +359,14 @@ abstract class _Jutsu implements Jutsu {
   String get description;
   @override
   bool get isEquipped;
+  @override
+  int get range;
+  @override
+  JutsuTargeting get targeting;
+  @override
+  int get areaRadius; // For area effects around target or player
+  @override
+  int get apCost;
 
   /// Create a copy of Jutsu
   /// with the given fields replaced by the non-null parameter values.

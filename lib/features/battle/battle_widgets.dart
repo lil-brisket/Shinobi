@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'battle_models.dart';
 import 'battle_controller.dart';
 import '../../models/battle_costs.dart';
+import '../../models/jutsu.dart';
+import '../../controllers/providers.dart';
 
 /// HP/CP bar widget
 class StatBar extends StatelessWidget {
@@ -1297,50 +1299,13 @@ class ActionPanel extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             
-            // Jutsu grid
+            // Jutsu grid - dynamic based on equipped jutsus
             SizedBox(
               height: 90,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildJutsuCard(
-                      label: "Fireball", 
-                      ap: 15, 
-                      cp: 40,
-                      icon: Icons.local_fire_department,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildJutsuCard(
-                      label: "Shadow Clone", 
-                      ap: 20, 
-                      cp: 50,
-                      icon: Icons.person_add,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildJutsuCard(
-                      label: "Lightning Bolt", 
-                      ap: 20, 
-                      cp: 60,
-                      icon: Icons.flash_on,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildJutsuCard(
-                      label: "Earth Wall", 
-                      ap: 20, 
-                      cp: 55,
-                      icon: Icons.wallpaper,
-                    ),
-                  ),
-                ],
-              ),
+              child: _buildJutsuGrid(battleController, activeEntity, ref),
             ),
             const SizedBox(height: 8),
+
 
             // End turn button
             SizedBox(
@@ -1439,57 +1404,144 @@ class ActionPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildCostBadge(String text) => Container(
+  Widget _buildCostBadge(String text, [bool? enabled]) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(999),
-      color: Colors.black.withOpacity(.25),
+      color: enabled != null 
+        ? (enabled ? Colors.blue.withOpacity(0.2) : Colors.grey.withOpacity(0.1))
+        : Colors.black.withOpacity(.25),
     ),
     child: Text(
       text, 
-      style: const TextStyle(fontSize: 11, color: Colors.white),
+      style: TextStyle(
+        fontSize: 11, 
+        color: enabled != null ? (enabled ? Colors.white : Colors.white60) : Colors.white,
+      ),
     ),
   );
 
-  Widget _buildJutsuCard({
-    required String label,
-    required int ap,
-    required int cp,
-    required IconData icon,
-  }) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFF141A24),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 16, color: Colors.white),
-                const SizedBox(width: 4),
-                Text(
-                  label, 
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+  Widget _buildJutsuGrid(BattleController battleController, Entity activeEntity, WidgetRef ref) {
+    // Get equipped jutsus from the provider - use watch to rebuild when jutsus change
+    final jutsus = ref.watch(jutsusProvider);
+    final equippedJutsus = jutsus.where((jutsu) => jutsu.isEquipped).toList();
+    
+    
+    if (equippedJutsus.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141A24),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Center(
+          child: Text(
+            'No jutsus equipped',
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 12,
             ),
-            const Spacer(),
-            Wrap(spacing: 6, children: [
-              _buildCostBadge('AP $ap'),
-              _buildCostBadge('CP $cp'),
-            ]),
-          ],
+          ),
+        ),
+      );
+    }
+
+    // Watch battle state at widget level to ensure reactivity
+    final battleState = ref.watch(battleProvider);
+    
+    // Create a grid of jutsu cards (max 7 jutsus)
+    final jutsuCards = equippedJutsus.take(7).map((jutsu) {
+      final canAfford = activeEntity.cp >= jutsu.chakraCost;
+      final isSelected = battleState.selectedJutsuId == jutsu.id;
+      return Expanded(
+        child: _buildJutsuCard(
+          jutsu: jutsu,
+          onTap: canAfford ? () => battleController.selectJutsu(jutsu.id) : null,
+          canAfford: canAfford,
+          isSelected: isSelected,
+        ),
+      );
+    }).toList();
+
+    // Add spacing between cards
+    final spacedCards = <Widget>[];
+    for (int i = 0; i < jutsuCards.length; i++) {
+      spacedCards.add(jutsuCards[i]);
+      if (i < jutsuCards.length - 1) {
+        spacedCards.add(const SizedBox(width: 8));
+      }
+    }
+
+    return Row(children: spacedCards);
+  }
+
+  Widget _buildJutsuCard({
+    required Jutsu jutsu,
+    required VoidCallback? onTap,
+    required bool canAfford,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isSelected 
+            ? Colors.blue.withOpacity(0.3)  // Selected jutsu gets blue highlight
+            : (canAfford ? const Color(0xFF141A24) : const Color(0xFF0A0E14)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected 
+              ? Colors.blue  // Selected jutsu gets blue border
+              : (canAfford ? Colors.white10 : Colors.white.withOpacity(0.05)),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(_getJutsuIcon(jutsu.type), size: 16, color: canAfford ? Colors.white : Colors.white60),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      jutsu.name, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: canAfford ? Colors.white : Colors.white60,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Wrap(spacing: 6, children: [
+                _buildCostBadge('CP ${jutsu.chakraCost}', canAfford),
+                _buildCostBadge('PWR ${jutsu.power}', canAfford),
+              ]),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  IconData _getJutsuIcon(JutsuType type) {
+    switch (type) {
+      case JutsuType.ninjutsu:
+        return Icons.auto_awesome;
+      case JutsuType.taijutsu:
+        return Icons.sports_martial_arts;
+      case JutsuType.genjutsu:
+        return Icons.visibility;
+      case JutsuType.kekkeiGenkai:
+        return Icons.bloodtype;
+    }
+  }
+
 }

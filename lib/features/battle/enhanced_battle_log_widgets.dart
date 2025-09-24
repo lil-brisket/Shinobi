@@ -353,6 +353,8 @@ class _RoundCardState extends State<RoundCard> {
         return Colors.blue;
       case BattleAction.flee:
         return Colors.orange;
+      case BattleAction.jutsu:
+        return Colors.purple;
       case BattleAction.endTurn:
         return Colors.grey;
       default:
@@ -370,6 +372,8 @@ class _RoundCardState extends State<RoundCard> {
         return 'MOVE';
       case BattleAction.flee:
         return 'FLEE';
+      case BattleAction.jutsu:
+        return 'JUTSU';
       case BattleAction.endTurn:
         return 'END';
       default:

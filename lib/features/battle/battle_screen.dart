@@ -6,6 +6,7 @@ import 'battle_widgets.dart';
 import 'battle_formulas.dart';
 import '../../models/battle_costs.dart';
 import '../../models/stats.dart';
+import '../../models/jutsu.dart';
 import '../../widgets/bars.dart';
 import '../../controllers/providers.dart';
 
@@ -159,6 +160,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
+                // Clear battle state before going back
+                ref.read(battleProvider.notifier).clearBattle();
                 Navigator.of(context).pop();
               },
               icon: const Icon(Icons.arrow_back),
@@ -297,13 +300,35 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    // JUTSU ROW (keep yours, this is a compact placeholder)
-                    _JutsuRow(
-                      onTap: (name) {
-                        ctrl.switchToActionMode();
-                        // hook into your existing jutsu logic
-                      },
+                    // JUTSU ROW - Dynamic jutsu system from inventory
+                    SizedBox(
+                      height: 90,
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final currentBattleState = ref.watch(battleProvider);
+                          return currentBattleState.activeEntity != null 
+                            ? _buildJutsuGrid(ctrl, currentBattleState.activeEntity!, ref)
+                            : Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF141A24),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: Colors.white10),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'No active entity',
+                                    style: TextStyle(
+                                      color: Colors.white60,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              );
+                        },
+                      ),
                     ),
+                    
                   ],
                 ),
               ),
@@ -426,6 +451,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
           TextButton(
             onPressed: () {
+              // Clear battle state before going back
+              ref.read(battleProvider.notifier).clearBattle();
               Navigator.of(context).pop(); // Close dialog
               Navigator.of(context).pop(); // Exit battle screen
             },
@@ -561,6 +588,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
+              // Clear battle state before going back
+              ref.read(battleProvider.notifier).clearBattle();
               Navigator.of(context).pop(); // Close dialog
               Navigator.of(context).pop(); // Go back to battle grounds
             },
@@ -663,44 +692,27 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       );
 
       // Create fresh enemies (same as original battle config but with new IDs)
-      final freshEnemies = [
-        Entity(
-          id: 'E1_${DateTime.now().millisecondsSinceEpoch}', // Unique ID
-          name: 'Enemy 1',
+      // Use the same number and type of enemies as the original battle
+      final freshEnemies = battleState.enemies.map((originalEnemy) {
+        return Entity(
+          id: '${originalEnemy.id}_${DateTime.now().millisecondsSinceEpoch}', // Unique ID
+          name: originalEnemy.name,
           isPlayerControlled: false,
-          pos: const Position(row: 2, col: 8),
-          hp: 90,
-          hpMax: 90,
-          cp: 50,
-          cpMax: 50,
-          sp: 30,
-          spMax: 30,
-          str: 5,
-          spd: 5,
-          intStat: 0,
-          wil: 3,
+          pos: originalEnemy.pos, // Keep original position
+          hp: originalEnemy.hpMax, // Full health
+          hpMax: originalEnemy.hpMax,
+          cp: originalEnemy.cpMax, // Full chakra
+          cpMax: originalEnemy.cpMax,
+          sp: originalEnemy.spMax, // Full stamina
+          spMax: originalEnemy.spMax,
+          str: originalEnemy.str,
+          spd: originalEnemy.spd,
+          intStat: originalEnemy.intStat,
+          wil: originalEnemy.wil,
           ap: BalanceConfig.defaultAPMax,
           apMax: BalanceConfig.defaultAPMax,
-        ),
-        Entity(
-          id: 'E2_${DateTime.now().millisecondsSinceEpoch}', // Unique ID
-          name: 'Enemy 2',
-          isPlayerControlled: false,
-          pos: const Position(row: 1, col: 9),
-          hp: 80,
-          hpMax: 80,
-          cp: 40,
-          cpMax: 40,
-          sp: 25,
-          spMax: 25,
-          str: 4,
-          spd: 4,
-          intStat: 0,
-          wil: 2,
-          ap: BalanceConfig.defaultAPMax,
-          apMax: BalanceConfig.defaultAPMax,
-        ),
-      ];
+        );
+      }).toList();
 
       final newBattleConfig = BattleConfig(
         players: [healedPlayerEntity],
@@ -901,50 +913,147 @@ class _LogListState extends State<_LogList> {
 }
 
 
-class _JutsuRow extends StatelessWidget {
-  final void Function(String name) onTap;
-  const _JutsuRow({required this.onTap, super.key});
-  @override
-  Widget build(BuildContext context) {
-    final items = const ["Fireball", "Shadow Clone", "Lightning Bolt", "Earth Wall"];
-    return SizedBox(
-      height: 96,
-      child: Row(
-        children: [
-          for (final name in items) ...[
-            Expanded(
-              child: InkWell(
-                onTap: () => onTap(name),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141A24),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      Row(children: const [
-                        _CostPill('AP 20'),
-                        SizedBox(width: 6),
-                        _CostPill('CP 40'),
-                      ]),
-                    ],
-                  ),
-                ),
-              ),
+  Widget _buildJutsuGrid(BattleController battleController, Entity activeEntity, WidgetRef ref) {
+    // Get equipped jutsus from the provider - use watch to rebuild when jutsus change
+    final jutsus = ref.watch(jutsusProvider);
+    final equippedJutsus = jutsus.where((jutsu) => jutsu.isEquipped).toList();
+    
+    
+    if (equippedJutsus.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141A24),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Center(
+          child: Text(
+            'No jutsus equipped',
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 12,
             ),
-            if (name != items.last) const SizedBox(width: 8),
-          ]
-        ],
+          ),
+        ),
+      );
+    }
+
+    // Watch battle state at widget level to ensure reactivity
+    final battleState = ref.watch(battleProvider);
+    
+    // Create a grid of jutsu cards (max 7 jutsus)
+    final jutsuCards = equippedJutsus.take(7).map((jutsu) {
+      final canAfford = activeEntity.cp >= jutsu.chakraCost && activeEntity.ap >= jutsu.apCost;
+      final isSelected = battleState.selectedJutsuId == jutsu.id;
+      return Expanded(
+        child: _buildJutsuCard(
+          jutsu: jutsu,
+          onTap: canAfford ? () => battleController.selectJutsu(jutsu.id) : null,
+          canAfford: canAfford,
+          isSelected: isSelected,
+        ),
+      );
+    }).toList();
+
+    // Add spacing between cards
+    final spacedCards = <Widget>[];
+    for (int i = 0; i < jutsuCards.length; i++) {
+      spacedCards.add(jutsuCards[i]);
+      if (i < jutsuCards.length - 1) {
+        spacedCards.add(const SizedBox(width: 8));
+      }
+    }
+
+    return Row(children: spacedCards);
+  }
+
+  Widget _buildJutsuCard({
+    required Jutsu jutsu,
+    required VoidCallback? onTap,
+    required bool canAfford,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isSelected 
+            ? Colors.blue.withOpacity(0.3)  // Selected jutsu gets blue highlight
+            : (canAfford ? const Color(0xFF141A24) : const Color(0xFF0A0E14)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected 
+              ? Colors.blue  // Selected jutsu gets blue border
+              : (canAfford ? Colors.white10 : Colors.white.withOpacity(0.05)),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(_getJutsuIcon(jutsu.type), size: 16, color: canAfford ? Colors.white : Colors.white60),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      jutsu.name, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: canAfford ? Colors.white : Colors.white60,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Wrap(spacing: 6, children: [
+                _buildCostBadge('AP ${jutsu.apCost}', canAfford),
+                _buildCostBadge('CP ${jutsu.chakraCost}', canAfford),
+                _buildCostBadge('PWR ${jutsu.power}', canAfford),
+              ]),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
+
+  IconData _getJutsuIcon(JutsuType type) {
+    switch (type) {
+      case JutsuType.ninjutsu:
+        return Icons.auto_awesome;
+      case JutsuType.taijutsu:
+        return Icons.sports_martial_arts;
+      case JutsuType.genjutsu:
+        return Icons.visibility;
+      case JutsuType.kekkeiGenkai:
+        return Icons.bloodtype;
+    }
+  }
+
+  Widget _buildCostBadge(String text, bool enabled) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: enabled ? Colors.blue.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text, 
+        style: TextStyle(
+          fontSize: 10, 
+          color: enabled ? Colors.white : Colors.white60,
+        ),
+      ),
+    );
+  }
+
 
 class _CostPill extends StatelessWidget {
   final String text;

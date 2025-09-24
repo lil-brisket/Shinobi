@@ -280,6 +280,17 @@ class JutsusScreen extends ConsumerWidget {
     final jutsuIndex = jutsus.indexWhere((j) => j.id == jutsu.id);
     
     if (jutsuIndex != -1) {
+      // Check 7-jutsu limit (move, punch, heal, flee don't count)
+      final equippedCount = jutsus.where((j) => j.isEquipped).length;
+      if (equippedCount >= 7) {
+        SnackbarUtils.showError(
+          context,
+          'Maximum 7 jutsus can be equipped!',
+          backgroundColor: AppTheme.hpColor,
+        );
+        return;
+      }
+
       final updatedJutsus = List<Jutsu>.from(jutsus);
       updatedJutsus[jutsuIndex] = updatedJutsus[jutsuIndex].copyWith(isEquipped: true);
       ref.read(jutsusProvider.notifier).state = updatedJutsus;

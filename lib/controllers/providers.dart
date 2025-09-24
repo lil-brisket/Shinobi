@@ -225,8 +225,11 @@ final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
       type: JutsuType.ninjutsu,
       chakraCost: 80,
       power: 450,
-      description: 'A powerful spinning chakra attack',
+      description: 'A powerful spinning chakra attack in a straight line',
       isEquipped: true,
+      range: 4,
+      targeting: JutsuTargeting.straightLine,
+      apCost: 60,
     ),
     const Jutsu(
       id: 'shadow_clone',
@@ -234,8 +237,12 @@ final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
       type: JutsuType.ninjutsu,
       chakraCost: 60,
       power: 300,
-      description: 'Creates clones to confuse enemies',
+      description: 'Teleport and damage enemies around you',
+      apCost: 60,
       isEquipped: true,
+      range: 3,
+      targeting: JutsuTargeting.movementAbility,
+      areaRadius: 1,
     ),
     const Jutsu(
       id: 'wind_style',
@@ -245,6 +252,8 @@ final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
       power: 380,
       description: 'Powerful wind attack',
       isEquipped: false,
+      range: 2,
+      targeting: JutsuTargeting.singleTarget,
     ),
     const Jutsu(
       id: 'fireball',
@@ -254,6 +263,8 @@ final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
       power: 320,
       description: 'Launches a ball of fire',
       isEquipped: false,
+      range: 3,
+      targeting: JutsuTargeting.singleTarget,
     ),
     const Jutsu(
       id: 'lightning_blade',
@@ -263,6 +274,8 @@ final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
       power: 520,
       description: 'High-speed lightning attack',
       isEquipped: false,
+      range: 2,
+      targeting: JutsuTargeting.singleTarget,
     ),
   ];
 });

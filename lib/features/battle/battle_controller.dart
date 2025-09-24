@@ -5,10 +5,13 @@ import 'battle_formulas.dart';
 import '../../controllers/providers.dart';
 import '../../models/battle_history.dart';
 import '../../models/battle_costs.dart';
+import '../../models/jutsu.dart';
 
 /// Battle controller managing game state and logic
 class BattleController extends StateNotifier<BattleState> {
-  BattleController() : super(_initialState);
+  final Ref _ref;
+  
+  BattleController(this._ref) : super(_initialState);
 
   static final BattleState _initialState = BattleState(
     rows: 5,
@@ -181,8 +184,21 @@ class BattleController extends StateNotifier<BattleState> {
     }
   }
 
+  /// Clear all battle state to prepare for a new battle
+  void _clearBattleState() {
+    state = _initialState;
+  }
+
+  /// Public method to clear battle state (useful when navigating away from battle)
+  void clearBattle() {
+    _clearBattleState();
+  }
+
   /// Start a new battle with given configuration
   void startBattle(BattleConfig config) {
+    // Clear any existing battle state first
+    _clearBattleState();
+    
     // Initialize RNG with the battle seed
     _rand = math.Random(config.rngSeed);
     
@@ -233,6 +249,9 @@ class BattleController extends StateNotifier<BattleState> {
       isMoveMode: newMoveMode,
       isPunchMode: false,
       isHealMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: newMoveMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
@@ -241,7 +260,7 @@ class BattleController extends StateNotifier<BattleState> {
     }
   }
 
-  /// Cancel current mode (move, punch, or heal)
+  /// Cancel current mode (move, punch, heal, or jutsu)
   void cancelCurrentMode() {
     if (!state.isPlayersTurn) return;
     
@@ -249,6 +268,9 @@ class BattleController extends StateNotifier<BattleState> {
       isMoveMode: false,
       isPunchMode: false,
       isHealMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: BattlePhase.selectingAction,
     );
     
@@ -266,6 +288,9 @@ class BattleController extends StateNotifier<BattleState> {
       isMoveMode: false,
       isPunchMode: false,
       isHealMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: BattlePhase.selectingAction,
     );
   }
@@ -283,6 +308,9 @@ class BattleController extends StateNotifier<BattleState> {
       isPunchMode: newPunchMode,
       isMoveMode: false,
       isHealMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: newPunchMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
@@ -304,6 +332,9 @@ class BattleController extends StateNotifier<BattleState> {
       isHealMode: newHealMode,
       isMoveMode: false,
       isPunchMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: newHealMode ? BattlePhase.selectingTile : BattlePhase.selectingAction,
     );
 
@@ -322,6 +353,8 @@ class BattleController extends StateNotifier<BattleState> {
       _handlePunchSelection(row, col);
     } else if (state.isHealMode) {
       _handleHealSelection(row, col);
+    } else if (state.isJutsuMode) {
+      _handleJutsuSelection(row, col);
     }
   }
 
@@ -335,7 +368,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (activeEntity == null || !target.alive) return;
 
     // Check if target is within punch range (including diagonals)
-    if (_euclideanDistance(activeEntity.pos, target.pos) > 2.5) {
+    if (_euclideanDistance(activeEntity.pos, target.pos) > 1.5) {
       _addLog('Target is out of punch range!');
       return;
     }
@@ -535,6 +568,9 @@ class BattleController extends StateNotifier<BattleState> {
       isMoveMode: false,
       isPunchMode: false,
       isHealMode: false,
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
       phase: BattlePhase.selectingAction,
     );
     _clearHighlights();
@@ -612,7 +648,7 @@ class BattleController extends StateNotifier<BattleState> {
     }
 
     // Check if within punch range of a player - punch the weakest
-    final nearbyPlayers = _getNearbyEnemies(enemy.id, 2.5)
+    final nearbyPlayers = _getNearbyEnemies(enemy.id, 1.5)
         .where((e) => e.isPlayerControlled)
         .toList();
     
@@ -632,7 +668,7 @@ class BattleController extends StateNotifier<BattleState> {
     // After moving, check if we can punch
     final updatedEnemy = state.activeEntity;
     if (updatedEnemy != null) {
-      final newNearbyPlayers = _getNearbyEnemies(updatedEnemy.id, 2.5)
+      final newNearbyPlayers = _getNearbyEnemies(updatedEnemy.id, 1.5)
           .where((e) => e.isPlayerControlled)
           .toList();
       
@@ -807,7 +843,7 @@ class BattleController extends StateNotifier<BattleState> {
 
     // Check if the selected tile is within punch range (including diagonals)
     final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
-    if (distance > 2.5) {
+    if (distance > 1.5) {
       _addLog('Target is out of punch range!');
       return;
     }
@@ -882,6 +918,564 @@ class BattleController extends StateNotifier<BattleState> {
     _endTurn();
   }
 
+  /// Get equipped jutsus for the active player
+  List<Jutsu> _getEquippedJutsus() {
+    final jutsus = _ref.read(jutsusProvider);
+    return jutsus.where((jutsu) => jutsu.isEquipped).toList();
+  }
+
+  /// Handle jutsu selection
+  void selectJutsu(String jutsuId) {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null || !activeEntity.isPlayerControlled) return;
+
+    final equippedJutsus = _getEquippedJutsus();
+    final jutsu = equippedJutsus.firstWhere((j) => j.id == jutsuId, orElse: () => throw Exception('Jutsu not found'));
+
+    // Check if player has enough chakra and AP
+    if (activeEntity.cp < jutsu.chakraCost) {
+      _addLog('Not enough chakra! Need ${jutsu.chakraCost}, have ${activeEntity.cp}');
+      return;
+    }
+    
+    if (activeEntity.ap < jutsu.apCost) {
+      _addLog('Not enough AP! Need ${jutsu.apCost}, have ${activeEntity.ap}');
+      return;
+    }
+
+    // If already in jutsu mode and selecting the same jutsu, cancel jutsu mode
+    if (state.isJutsuMode && state.selectedJutsuId == jutsuId) {
+      cancelJutsuSelection();
+      return;
+    }
+
+    // Clear any existing highlights first
+    _clearHighlights();
+    
+    // Set jutsu mode (or switch to different jutsu)
+    state = state.copyWith(
+      isJutsuMode: true,
+      selectedJutsuId: jutsuId,
+      selectedJutsuRange: null, // No longer using range selection
+      phase: BattlePhase.selectingTile,
+    );
+
+    _highlightJutsuRange(jutsu);
+  }
+
+
+  /// Cancel jutsu selection and return to action selection
+  void cancelJutsuSelection() {
+    if (!state.isJutsuMode && state.selectedJutsuId == null) {
+      return;
+    }
+    
+    _clearHighlights();
+    
+    state = state.copyWith(
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
+      phase: BattlePhase.selectingAction,
+    );
+  }
+
+  /// Highlight tiles within jutsu range based on targeting type
+  void _highlightJutsuRange(Jutsu jutsu) {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    final newTiles = List<List<Tile>>.from(state.tiles);
+    
+    // Use jutsu's default range
+    final effectiveRange = jutsu.range;
+    
+    switch (jutsu.targeting) {
+      case JutsuTargeting.straightLine:
+        // For Rasengan, show all possible line directions
+        if (jutsu.id == 'rasengan') {
+          _highlightAllLineDirections(activeEntity, effectiveRange, newTiles);
+        } else {
+          _highlightStraightLine(activeEntity, effectiveRange, newTiles);
+        }
+        break;
+      case JutsuTargeting.areaAroundPlayer:
+        _highlightAreaAroundPlayer(activeEntity, effectiveRange, newTiles);
+        break;
+      case JutsuTargeting.singleTarget:
+        _highlightSingleTarget(activeEntity, effectiveRange, newTiles);
+        break;
+      case JutsuTargeting.movementAbility:
+        _highlightMovementTiles(activeEntity, effectiveRange, newTiles);
+        break;
+    }
+
+    state = state.copyWith(tiles: newTiles);
+  }
+
+  /// Highlight straight line in all 4 directions
+  void _highlightStraightLine(Entity activeEntity, int range, List<List<Tile>> newTiles) {
+    // North
+    for (int i = 1; i <= range; i++) {
+      final row = activeEntity.pos.row - i;
+      if (row >= 0) {
+        _highlightTile(row, activeEntity.pos.col, newTiles, activeEntity);
+      }
+    }
+    // South
+    for (int i = 1; i <= range; i++) {
+      final row = activeEntity.pos.row + i;
+      if (row < state.rows) {
+        _highlightTile(row, activeEntity.pos.col, newTiles, activeEntity);
+      }
+    }
+    // East
+    for (int i = 1; i <= range; i++) {
+      final col = activeEntity.pos.col + i;
+      if (col < state.cols) {
+        _highlightTile(activeEntity.pos.row, col, newTiles, activeEntity);
+      }
+    }
+    // West
+    for (int i = 1; i <= range; i++) {
+      final col = activeEntity.pos.col - i;
+      if (col >= 0) {
+        _highlightTile(activeEntity.pos.row, col, newTiles, activeEntity);
+      }
+    }
+  }
+
+  /// Highlight all possible line directions for Rasengan (8 directions)
+  void _highlightAllLineDirections(Entity activeEntity, int range, List<List<Tile>> newTiles) {
+    // Define all 8 directions: N, NE, E, SE, S, SW, W, NW
+    final directions = [
+      [-1, 0],  // North
+      [-1, 1],  // Northeast
+      [0, 1],   // East
+      [1, 1],   // Southeast
+      [1, 0],   // South
+      [1, -1],  // Southwest
+      [0, -1],  // West
+      [-1, -1], // Northwest
+    ];
+
+    for (final direction in directions) {
+      final deltaRow = direction[0];
+      final deltaCol = direction[1];
+      
+      for (int i = 1; i <= range; i++) {
+        final row = activeEntity.pos.row + (deltaRow * i);
+        final col = activeEntity.pos.col + (deltaCol * i);
+        
+        // Check bounds
+        if (row >= 0 && row < state.rows && col >= 0 && col < state.cols) {
+          _highlightTile(row, col, newTiles, activeEntity);
+        }
+      }
+    }
+  }
+
+  /// Highlight area around player
+  void _highlightAreaAroundPlayer(Entity activeEntity, int range, List<List<Tile>> newTiles) {
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
+        if (distance <= range && distance > 0) {
+          _highlightTile(row, col, newTiles, activeEntity);
+        }
+      }
+    }
+  }
+
+  /// Highlight single target within range
+  void _highlightSingleTarget(Entity activeEntity, int range, List<List<Tile>> newTiles) {
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
+        if (distance <= range && distance > 0) {
+          _highlightTile(row, col, newTiles, activeEntity);
+        }
+      }
+    }
+  }
+
+  /// Highlight movement tiles (empty tiles within range)
+  void _highlightMovementTiles(Entity activeEntity, int range, List<List<Tile>> newTiles) {
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
+        if (distance <= range && distance > 0) {
+          final tile = state.tiles[row][col];
+          // Only highlight empty tiles for movement
+          if (tile.entityId == null) {
+            newTiles[row][col] = newTiles[row][col]
+                .copyWith(highlight: TileHighlight.move);
+          }
+        }
+      }
+    }
+  }
+
+  /// Helper method to highlight a tile based on entity presence
+  void _highlightTile(int row, int col, List<List<Tile>> newTiles, Entity activeEntity) {
+    final tile = state.tiles[row][col];
+    
+    if (tile.entityId != null) {
+      final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+      // Highlight enemy tiles as valid targets
+      if (!target.isPlayerControlled && target.id != activeEntity.id) {
+        newTiles[row][col] = newTiles[row][col]
+            .copyWith(highlight: TileHighlight.target);
+      } else {
+        // Highlight ally/self tiles as invalid targets
+        newTiles[row][col] = newTiles[row][col]
+            .copyWith(highlight: TileHighlight.invalid);
+      }
+    } else {
+      // Highlight empty tiles as jutsu range (can cast but will miss)
+      newTiles[row][col] = newTiles[row][col]
+          .copyWith(highlight: TileHighlight.range);
+    }
+  }
+
+  /// Handle jutsu tile selection
+  void _handleJutsuSelection(int row, int col) {
+    final activeEntity = state.activeEntity;
+    if (activeEntity == null) return;
+
+    final equippedJutsus = _getEquippedJutsus();
+    final jutsu = equippedJutsus.firstWhere((j) => j.id == state.selectedJutsuId, orElse: () => throw Exception('Jutsu not found'));
+
+    switch (jutsu.targeting) {
+      case JutsuTargeting.straightLine:
+        _handleStraightLineJutsu(activeEntity, row, col, jutsu);
+        break;
+      case JutsuTargeting.areaAroundPlayer:
+        _handleAreaJutsu(activeEntity, jutsu);
+        break;
+      case JutsuTargeting.singleTarget:
+        _handleSingleTargetJutsu(activeEntity, row, col, jutsu);
+        break;
+      case JutsuTargeting.movementAbility:
+        _handleMovementJutsu(activeEntity, row, col, jutsu);
+        break;
+    }
+  }
+
+  /// Handle straight line jutsu (like Rasengan)
+  void _handleStraightLineJutsu(Entity activeEntity, int row, int col, Jutsu jutsu) {
+    // For Rasengan, allow any direction (including diagonal)
+    if (jutsu.id == 'rasengan') {
+      _handleRasenganLineTargeting(activeEntity, row, col, jutsu);
+      return;
+    }
+    
+    // For other straight line jutsus, only allow cardinal directions
+    final isInLine = (row == activeEntity.pos.row || col == activeEntity.pos.col);
+    if (!isInLine) {
+      _addLog('Target must be in a straight line!');
+      return;
+    }
+
+    // Use jutsu's default range
+    final effectiveRange = jutsu.range;
+    
+    // Check range
+    final distance = math.max((row - activeEntity.pos.row).abs(), (col - activeEntity.pos.col).abs());
+    if (distance > effectiveRange) {
+      _addLog('Target is out of jutsu range!');
+      return;
+    }
+
+    // Find all entities in the line and damage them
+    final direction = _getDirection(activeEntity.pos.row, activeEntity.pos.col, row, col);
+    final targets = _getEntitiesInLine(activeEntity, direction, effectiveRange);
+    
+    _executeJutsu(activeEntity, null, jutsu, targets: targets);
+  }
+
+  /// Handle Rasengan line targeting (allows any direction including diagonal)
+  void _handleRasenganLineTargeting(Entity activeEntity, int row, int col, Jutsu jutsu) {
+    // Check if target is in a valid line direction (any of the 8 directions)
+    final deltaRow = row - activeEntity.pos.row;
+    final deltaCol = col - activeEntity.pos.col;
+    
+    // Check if it's a valid line (not the same position)
+    if (deltaRow == 0 && deltaCol == 0) {
+      _addLog('Cannot target your own position!');
+      return;
+    }
+    
+    // Check if it's a valid line direction (either horizontal, vertical, or diagonal)
+    final isHorizontal = deltaRow == 0 && deltaCol != 0;
+    final isVertical = deltaCol == 0 && deltaRow != 0;
+    final isDiagonal = deltaRow.abs() == deltaCol.abs() && deltaRow != 0 && deltaCol != 0;
+    
+    if (!isHorizontal && !isVertical && !isDiagonal) {
+      _addLog('Target must be in a straight line!');
+      return;
+    }
+    
+    // Check range (use maximum of row or column distance)
+    final distance = math.max(deltaRow.abs(), deltaCol.abs());
+    if (distance > jutsu.range) {
+      _addLog('Target is out of jutsu range!');
+      return;
+    }
+    
+    // Find all entities in the line and damage them
+    final targets = _getEntitiesInRasenganLine(activeEntity, row, col, jutsu.range);
+    
+    _executeJutsu(activeEntity, null, jutsu, targets: targets);
+  }
+
+  /// Handle area jutsu around player
+  void _handleAreaJutsu(Entity activeEntity, Jutsu jutsu) {
+    final targets = _getEntitiesInArea(activeEntity, jutsu.range);
+    _executeJutsu(activeEntity, null, jutsu, targets: targets);
+  }
+
+  /// Handle single target jutsu
+  void _handleSingleTargetJutsu(Entity activeEntity, int row, int col, Jutsu jutsu) {
+    final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
+    if (distance > jutsu.range) {
+      _addLog('Target is out of jutsu range!');
+      return;
+    }
+
+    final tile = state.tiles[row][col];
+    if (tile.entityId != null) {
+      final target = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+      if (!target.isPlayerControlled && target.id != activeEntity.id) {
+        _executeJutsu(activeEntity, target, jutsu);
+      } else {
+        _addLog('Cannot target allies with this jutsu!');
+        return;
+      }
+    } else {
+      _executeJutsu(activeEntity, null, jutsu);
+    }
+  }
+
+  /// Handle movement jutsu (like Shadow Clone)
+  void _handleMovementJutsu(Entity activeEntity, int row, int col, Jutsu jutsu) {
+    final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
+    if (distance > jutsu.range) {
+      _addLog('Target is out of movement range!');
+      return;
+    }
+
+    final tile = state.tiles[row][col];
+    if (tile.entityId != null) {
+      _addLog('Cannot move to occupied tile!');
+      return;
+    }
+
+    // Move player to new position
+    final updatedEntity = activeEntity.copyWith(pos: Position(row: row, col: col));
+    _updateEntity(updatedEntity);
+
+    // Damage enemies in area around new position
+    final targets = _getEntitiesInArea(updatedEntity, jutsu.areaRadius);
+    _executeJutsu(updatedEntity, null, jutsu, targets: targets);
+  }
+
+  /// Execute jutsu on target(s)
+  void _executeJutsu(Entity caster, Entity? target, Jutsu jutsu, {List<Entity>? targets}) {
+    // Spend chakra and AP
+    final updatedCaster = caster.copyWith(
+      cp: caster.cp - jutsu.chakraCost,
+      ap: caster.ap - jutsu.apCost,
+    );
+    _updateEntity(updatedCaster);
+
+    // Handle multiple targets (for area effects)
+    if (targets != null && targets.isNotEmpty) {
+      for (final targetEntity in targets) {
+        final damage = _calculateJutsuDamage(caster, targetEntity, jutsu);
+        final updatedTarget = targetEntity.copyWith(hp: math.max(0, targetEntity.hp - damage));
+        _updateEntity(updatedTarget);
+
+        _recordEntry(BattleLogEntry(
+          ts: DateTime.now(),
+          round: state.roundNumber,
+          turnIndex: state.turnIndexInRound,
+          actorId: caster.id,
+          targetId: targetEntity.id,
+          action: BattleAction.jutsu,
+          damage: damage,
+          message: '⚡ ${caster.name} used ${jutsu.name} on ${targetEntity.name} for $damage damage!',
+        ));
+
+        if (!updatedTarget.alive) {
+          _recordEntry(BattleLogEntry(
+            ts: DateTime.now(),
+            round: state.roundNumber,
+            turnIndex: state.turnIndexInRound,
+            actorId: targetEntity.id,
+            action: BattleAction.endTurn,
+            message: '💀 ${targetEntity.name} has been defeated!',
+          ));
+        }
+      }
+    } else if (target != null) {
+      // Single target
+      final damage = _calculateJutsuDamage(caster, target, jutsu);
+      final updatedTarget = target.copyWith(hp: math.max(0, target.hp - damage));
+      _updateEntity(updatedTarget);
+
+      _recordEntry(BattleLogEntry(
+        ts: DateTime.now(),
+        round: state.roundNumber,
+        turnIndex: state.turnIndexInRound,
+        actorId: caster.id,
+        targetId: target.id,
+        action: BattleAction.jutsu,
+        damage: damage,
+        message: '⚡ ${caster.name} used ${jutsu.name} on ${target.name} for $damage damage!',
+      ));
+
+      if (!updatedTarget.alive) {
+        _recordEntry(BattleLogEntry(
+          ts: DateTime.now(),
+          round: state.roundNumber,
+          turnIndex: state.turnIndexInRound,
+          actorId: target.id,
+          action: BattleAction.endTurn,
+          message: '💀 ${target.name} has been defeated!',
+        ));
+      }
+    } else {
+      // Miss
+      _recordEntry(BattleLogEntry(
+        ts: DateTime.now(),
+        round: state.roundNumber,
+        turnIndex: state.turnIndexInRound,
+        actorId: caster.id,
+        action: BattleAction.jutsu,
+        message: '⚡ ${caster.name} used ${jutsu.name} but missed!',
+      ));
+    }
+
+    _clearHighlights();
+    
+    state = state.copyWith(
+      isJutsuMode: false,
+      selectedJutsuId: null,
+      selectedJutsuRange: null,
+      phase: BattlePhase.selectingAction,
+    );
+    
+    _endTurn();
+  }
+
+  /// Get direction vector between two points
+  Position _getDirection(int fromRow, int fromCol, int toRow, int toCol) {
+    final deltaRow = toRow - fromRow;
+    final deltaCol = toCol - fromCol;
+    
+    // Normalize to unit vector
+    if (deltaRow == 0 && deltaCol == 0) return Position(row: 0, col: 0);
+    if (deltaRow == 0) return Position(row: 0, col: deltaCol > 0 ? 1 : -1);
+    if (deltaCol == 0) return Position(row: deltaRow > 0 ? 1 : -1, col: 0);
+    
+    return Position(row: deltaRow > 0 ? 1 : -1, col: deltaCol > 0 ? 1 : -1);
+  }
+
+  /// Get all entities in a straight line from caster
+  List<Entity> _getEntitiesInLine(Entity caster, Position direction, int range) {
+    final targets = <Entity>[];
+    
+    for (int i = 1; i <= range; i++) {
+      final row = caster.pos.row + (direction.row * i);
+      final col = caster.pos.col + (direction.col * i);
+      
+      if (row < 0 || row >= state.rows || col < 0 || col >= state.cols) break;
+      
+      final tile = state.tiles[row][col];
+      if (tile.entityId != null) {
+        final entity = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+        if (!entity.isPlayerControlled && entity.id != caster.id) {
+          targets.add(entity);
+        }
+      }
+    }
+    
+    return targets;
+  }
+
+  /// Get all entities in a Rasengan line from caster to target position
+  List<Entity> _getEntitiesInRasenganLine(Entity caster, int targetRow, int targetCol, int maxRange) {
+    final targets = <Entity>[];
+    
+    // Calculate direction vector
+    final deltaRow = targetRow - caster.pos.row;
+    final deltaCol = targetCol - caster.pos.col;
+    
+    // Normalize direction (make it a unit vector)
+    final stepRow = deltaRow == 0 ? 0 : (deltaRow > 0 ? 1 : -1);
+    final stepCol = deltaCol == 0 ? 0 : (deltaCol > 0 ? 1 : -1);
+    
+    // Walk along the line from caster to target (or max range)
+    final distance = math.max(deltaRow.abs(), deltaCol.abs());
+    final actualRange = math.min(distance, maxRange);
+    
+    for (int i = 1; i <= actualRange; i++) {
+      final row = caster.pos.row + (stepRow * i);
+      final col = caster.pos.col + (stepCol * i);
+      
+      if (row < 0 || row >= state.rows || col < 0 || col >= state.cols) break;
+      
+      final tile = state.tiles[row][col];
+      if (tile.entityId != null) {
+        final entity = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+        if (!entity.isPlayerControlled && entity.id != caster.id) {
+          targets.add(entity);
+        }
+      }
+    }
+    
+    return targets;
+  }
+
+  /// Get all entities in area around a position
+  List<Entity> _getEntitiesInArea(Entity center, int radius) {
+    final targets = <Entity>[];
+    
+    for (int row = 0; row < state.rows; row++) {
+      for (int col = 0; col < state.cols; col++) {
+        final distance = _euclideanDistance(center.pos, Position(row: row, col: col));
+        if (distance <= radius && distance > 0) {
+          final tile = state.tiles[row][col];
+          if (tile.entityId != null) {
+            final entity = state.allEntities.firstWhere((e) => e.id == tile.entityId);
+            if (!entity.isPlayerControlled && entity.id != center.id) {
+              targets.add(entity);
+            }
+          }
+        }
+      }
+    }
+    
+    return targets;
+  }
+
+  /// Calculate jutsu damage
+  int _calculateJutsuDamage(Entity caster, Entity target, Jutsu jutsu) {
+    // Base damage from jutsu power
+    final baseDamage = jutsu.power;
+    
+    // Scale by caster's intelligence stat (0-1000 range, scale to 0.5-2.0 multiplier)
+    final intMultiplier = 0.5 + (caster.intStat / 1000.0) * 1.5;
+    
+    // Apply target's willpower defense (reduces damage)
+    final defenseMultiplier = math.max(0.1, 1.0 - (target.wil / 2000.0));
+    
+    final finalDamage = (baseDamage * intMultiplier * defenseMultiplier).round();
+    
+    return math.max(1, finalDamage); // Minimum 1 damage
+  }
+
   /// Check if position is reachable within range
   bool _isReachable(Position from, Position to, int range) {
     return _manhattanDistance(from, to) <= range;
@@ -910,7 +1504,7 @@ class BattleController extends StateNotifier<BattleState> {
 
   /// Internal method to get adjacent enemies
   List<Entity> _getAdjacentEnemies(String entityId) {
-    return _getNearbyEnemies(entityId, 2.5);
+    return _getNearbyEnemies(entityId, 1.5);
   }
 
   /// Get enemies within a certain radius (Euclidean distance for punch range)
@@ -996,7 +1590,7 @@ class BattleController extends StateNotifier<BattleState> {
       for (int col = 0; col < state.cols; col++) {
         final distance = _euclideanDistance(activeEntity.pos, Position(row: row, col: col));
         
-        if (distance <= 2.5 && distance > 0) { // Within range but not the same position (2.5 allows 2-square diagonals)
+        if (distance <= 1.5 && distance > 0) { // Within range but not the same position (1.5 allows 1-square diagonals)
           final tile = state.tiles[row][col];
           
           if (tile.entityId != null) {
@@ -1217,7 +1811,7 @@ class BattleController extends StateNotifier<BattleState> {
     if (!target.alive) return;
 
     // Check if target is within punch range (including diagonals)
-    if (_euclideanDistance(actor.pos, target.pos) > 2.5) {
+    if (_euclideanDistance(actor.pos, target.pos) > 1.5) {
       _addLog('Target is out of punch range!');
       return;
     }
@@ -1334,7 +1928,7 @@ class BattleController extends StateNotifier<BattleState> {
 
 /// Provider for battle controller
 final battleProvider = StateNotifierProvider<BattleController, BattleState>((ref) {
-  return BattleController();
+  return BattleController(ref);
 });
 
 /// Provider for battle configuration
