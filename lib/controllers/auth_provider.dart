@@ -164,7 +164,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final sessionToken = 'guest_token_${DateTime.now().millisecondsSinceEpoch}';
       
       // Assign guest player to Willowshade Village by default
-      const defaultVillageId = 'willowshade';
+      const defaultVillageId = '550e8400-e29b-41d4-a716-446655440001';
       
       state = AuthState(
         isAuthenticated: true,

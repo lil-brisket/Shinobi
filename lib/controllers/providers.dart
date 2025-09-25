@@ -36,7 +36,7 @@ class PlayerNotifier extends StateNotifier<Player> {
     id: 'player_001',
     name: 'Naruto_Uzumaki',
     avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=N',
-    village: 'Hidden Leaf',
+    village: 'Willowshade Village',
     ryo: 15000,
     stats: const PlayerStats(
       level: 25,
@@ -501,7 +501,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
       id: 'player_002',
       name: 'Sasuke_Uchiha',
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
-      village: 'Hidden Leaf',
+      village: 'Willowshade Village',
       ryo: 12000,
       stats: const PlayerStats(
         level: 23,
@@ -525,7 +525,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
       id: 'player_003',
       name: 'Sakura_Haruno',
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
-      village: 'Hidden Leaf',
+      village: 'Willowshade Village',
       ryo: 8000,
       stats: const PlayerStats(
         level: 20,
@@ -549,7 +549,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
       id: 'player_004',
       name: 'Kakashi_Hatake',
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=K',
-      village: 'Hidden Leaf',
+      village: 'Willowshade Village',
       ryo: 25000,
       stats: const PlayerStats(
         level: 35,
@@ -573,7 +573,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
       id: 'player_005',
       name: 'Hinata_Hyuga',
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=H',
-      village: 'Hidden Leaf',
+      village: 'Willowshade Village',
       ryo: 10000,
       stats: const PlayerStats(
         level: 22,
