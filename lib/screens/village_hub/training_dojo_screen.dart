@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/timer_chip.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/tier_badge.dart';
-import '../../widgets/circular_progress.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
 import '../../models/timer.dart';

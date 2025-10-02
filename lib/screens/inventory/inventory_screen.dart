@@ -3,7 +3,6 @@ import '../../widgets/section_header.dart';
 import '../../widgets/silhouette.dart';
 import '../../app/theme.dart';
 import 'jutsus_screen.dart';
-import 'items_screen.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});

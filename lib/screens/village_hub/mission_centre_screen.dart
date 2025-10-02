@@ -334,7 +334,7 @@ class MissionCentreScreen extends ConsumerWidget {
     final newPlayer = player.copyWith(
       ryo: player.ryo + mission.reward.ryo,
     );
-    ref.read(playerProvider.notifier).state = newPlayer;
+    ref.read(playerProvider.notifier).updatePlayer(newPlayer);
 
     // Update mission status
     final missionIndex = missions.indexWhere((m) => m.id == mission.id);

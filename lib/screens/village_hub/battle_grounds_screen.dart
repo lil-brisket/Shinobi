@@ -374,38 +374,6 @@ class BattleGroundsScreen extends ConsumerWidget {
     );
   }
 
-  BattleConfig _createBattleConfig(String enemyName) {
-    // Create player entity (you can customize these stats based on your game's character system)
-    final player = Entity(
-      id: 'P1',
-      name: 'You',
-      isPlayerControlled: true,
-      pos: const Position(row: 2, col: 2),
-      hp: 100,
-      hpMax: 100,
-      cp: 30,
-      cpMax: 30,
-      sp: 50,
-      spMax: 50,
-      str: 6,
-      spd: 7,
-      intStat: 5,
-      wil: 4,
-      ap: 100,
-      apMax: 100,
-    );
-
-    // Create enemy based on the selected challenge
-    final enemy = _createEnemy(enemyName);
-
-    return BattleConfig(
-      players: [player],
-      enemies: [enemy],
-      rows: 5,
-      cols: 12,
-      rngSeed: DateTime.now().millisecondsSinceEpoch % 1000, // Random seed
-    );
-  }
 
   Entity _createEnemy(String enemyName) {
     switch (enemyName) {

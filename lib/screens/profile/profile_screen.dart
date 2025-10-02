@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../widgets/stat_bar.dart';
 import '../../widgets/info_card.dart';
 import '../../widgets/currency_pill.dart';
 import '../../widgets/user_stats_panel.dart';
@@ -469,7 +468,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onPressed: () {
               if (nameController.text.trim().isNotEmpty) {
                 final updatedPlayer = player.copyWith(name: nameController.text.trim());
-                ref.read(playerProvider.notifier).state = updatedPlayer;
+                ref.read(playerProvider.notifier).updatePlayer(updatedPlayer);
                 Navigator.pop(context);
                 SnackbarUtils.showSuccess(
                   context,
@@ -575,7 +574,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              '• Turn-based combat\n• Jutsu mastery system\n• Clan system\n• Mission system\n• Player dueling\n• Village exploration',
+              '• Turn-based combat\n• Jutsu mastery system\n• Mission system\n• Player dueling\n• Village exploration',
               style: TextStyle(color: Colors.white70),
             ),
           ],
@@ -715,7 +714,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onPressed: () {
               // Update player village
               final updatedPlayer = player.copyWith(village: newVillage.name);
-              ref.read(playerProvider.notifier).state = updatedPlayer;
+              ref.read(playerProvider.notifier).updatePlayer(updatedPlayer);
               
               Navigator.pop(context);
               SnackbarUtils.showSuccess(

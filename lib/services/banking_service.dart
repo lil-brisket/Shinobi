@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../models/banking.dart';
@@ -64,7 +63,7 @@ class BankingService {
       return Wallet.fromJson(response['data']);
     } catch (e) {
       // Fallback to mock data if API is not available
-      print('API not available, using mock data: $e');
+      // API not available, using mock data
       return Wallet(
         playerId: 'player-123',
         pocketBalance: _mockPocketBalance,
@@ -160,7 +159,7 @@ class BankingService {
       return usersJson.map((json) => Player.fromJson(json)).toList();
     } catch (e) {
       // Mock user search results
-      print('API not available, using mock user search: $e');
+      // API not available, using mock user search
       return [
         Player(id: '1', username: 'testuser1', createdAt: DateTime.now()),
         Player(id: '2', username: 'testuser2', createdAt: DateTime.now()),
@@ -257,7 +256,7 @@ class BankingService {
       return ledgerJson.map((json) => LedgerEntry.fromJson(json)).toList();
     } catch (e) {
       // Return mock ledger data (includes both static and dynamic entries)
-      print('API not available, using mock ledger: $e');
+      // API not available, using mock ledger
       
       // Combine static mock data with dynamic entries
       final staticEntries = [

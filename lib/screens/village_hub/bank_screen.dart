@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../widgets/currency_pill.dart';
-import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
 import '../../controllers/banking_provider.dart';
 import '../../models/banking.dart';
@@ -124,7 +122,7 @@ class _BankScreenState extends ConsumerState<BankScreen> with TickerProviderStat
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

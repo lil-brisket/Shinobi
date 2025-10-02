@@ -251,7 +251,7 @@ class ItemShopScreen extends ConsumerWidget {
     if (player.ryo >= price) {
       // Update player ryo
       final newPlayer = player.copyWith(ryo: player.ryo - price);
-      ref.read(playerProvider.notifier).state = newPlayer;
+      ref.read(playerProvider.notifier).updatePlayer(newPlayer);
 
       // Add item to inventory
       final inventory = ref.read(inventoryProvider);

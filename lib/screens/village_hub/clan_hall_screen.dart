@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../controllers/providers.dart';
 
-class ClanHallScreen extends ConsumerWidget {
+class ClanHallScreen extends StatelessWidget {
   const ClanHallScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clan Hall'),
@@ -60,7 +57,14 @@ class ClanHallScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => context.go('/village/clan'),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Clan functionality is currently unavailable'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
                       foregroundColor: Colors.white,

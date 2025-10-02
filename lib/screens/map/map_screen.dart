@@ -212,7 +212,7 @@ class _MapScreenState extends State<MapScreen> {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.blue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -286,7 +286,7 @@ class _MapScreenState extends State<MapScreen> {
                           boxShadow: isPlayerPosition
                               ? [
                                   BoxShadow(
-                                    color: Colors.blue.withOpacity(0.3),
+                                    color: Colors.blue.withValues(alpha: 0.3),
                                     blurRadius: 4,
                                     offset: const Offset(0, 1),
                                   ),

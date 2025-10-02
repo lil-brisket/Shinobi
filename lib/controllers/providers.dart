@@ -5,7 +5,6 @@ import '../models/item.dart';
 import '../models/equipment.dart';
 import '../models/jutsu.dart';
 import '../models/mission.dart';
-import '../models/clan.dart';
 import '../models/village.dart';
 import '../models/news.dart';
 import 'auth_provider.dart';
@@ -65,9 +64,9 @@ class PlayerNotifier extends StateNotifier<Player> {
   ));
 
   void updateStats(PlayerStats newStats) {
-    print('PlayerNotifier: Updating stats - STR: ${newStats.str}, INTL: ${newStats.intl}, WIL: ${newStats.wil}, SPD: ${newStats.spd}');
+    // Debug: Player stats updated
     state = state.copyWith(stats: newStats);
-    print('PlayerNotifier: State updated successfully');
+    // Debug: State updated successfully
   }
 
   void updatePlayer(Player newPlayer) {
@@ -318,17 +317,6 @@ final missionsProvider = StateProvider<List<Mission>>((ref) {
   ];
 });
 
-// Clan Provider
-final clanProvider = StateProvider<Clan?>((ref) {
-  return Clan(
-    id: 'clan_001',
-    name: 'Uzumaki Clan',
-    villageId: 'village_001',
-    description: 'Ancient clan known for their sealing techniques',
-    leaderId: 'player_001',
-    createdAt: DateTime.now().subtract(const Duration(days: 30)),
-  );
-});
 
 // Villages Provider
 final villagesProvider = Provider<List<Village>>((ref) {

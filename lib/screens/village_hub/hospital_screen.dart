@@ -212,7 +212,7 @@ class HospitalScreen extends ConsumerWidget {
   void _healPlayer(BuildContext context, WidgetRef ref, Player healer, Player target) {
     try {
       final updatedHealer = HealService.healPlayer(healer, target);
-      ref.read(playerProvider.notifier).state = updatedHealer;
+      ref.read(playerProvider.notifier).updatePlayer(updatedHealer);
       
       // Update the target player in the other players list
       final otherPlayers = ref.read(otherPlayersProvider);

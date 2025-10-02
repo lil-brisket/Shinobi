@@ -11,7 +11,6 @@ import '../screens/village_hub/training_dojo_screen.dart';
 import '../screens/village_hub/item_shop_screen.dart';
 import '../screens/village_hub/hospital_screen.dart';
 import '../screens/village_hub/clan_hall_screen.dart';
-import '../screens/clan/clan_page.dart';
 import '../screens/village_hub/bank_screen.dart';
 import '../screens/village_hub/battle_grounds_screen.dart';
 import '../screens/village_hub/mission_centre_screen.dart';
@@ -23,7 +22,6 @@ import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
 import '../controllers/auth_provider.dart';
-import '../debug/clan_seed_utility.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -50,7 +48,7 @@ class AppRouter {
         }
         return null;
       } catch (e) {
-        print('DEBUG ROUTER: Error accessing auth state: $e');
+        // Debug: Error accessing auth state
         // If there's an error accessing auth state, redirect to start
         return '/start';
       }
@@ -118,11 +116,6 @@ class AppRouter {
                 builder: (context, state) => const ClanHallScreen(),
               ),
               GoRoute(
-                path: 'clan',
-                name: 'clan',
-                builder: (context, state) => const ClanPage(),
-              ),
-              GoRoute(
                 path: 'bank',
                 name: 'bank',
                 builder: (context, state) => const BankScreen(),
@@ -170,12 +163,6 @@ class AppRouter {
             path: '/profile',
             name: 'profile',
             builder: (context, state) => const ProfileScreen(),
-          ),
-          // Debug utility (only accessible in development)
-          GoRoute(
-            path: '/debug/clan-seed',
-            name: 'clan-seed-utility',
-            builder: (context, state) => const ClanSeedUtility(),
           ),
         ],
       ),

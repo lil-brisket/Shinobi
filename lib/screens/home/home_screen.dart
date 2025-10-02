@@ -4,7 +4,6 @@ import '../../widgets/section_header.dart';
 import '../../widgets/info_card.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
-import '../../models/chat.dart';
 import '../../models/stats.dart';
 
 class HomeScreen extends ConsumerWidget {

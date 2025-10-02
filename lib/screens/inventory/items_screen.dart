@@ -85,8 +85,8 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Chip(
-                  backgroundColor: _rarityColors[item.rarity]!.withOpacity(.25),
-                  side: BorderSide(color: _rarityColors[item.rarity]!.withOpacity(.6)),
+                  backgroundColor: _rarityColors[item.rarity]!.withValues(alpha: .25),
+                  side: BorderSide(color: _rarityColors[item.rarity]!.withValues(alpha: .6)),
                   label: Text(
                     item.rarity.name.toUpperCase(),
                     style: const TextStyle(letterSpacing: 0.5),
@@ -247,11 +247,11 @@ class _ConsumablesGrid extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  base.withOpacity(.25),
-                  base.withOpacity(.12),
+                  base.withValues(alpha: .25),
+                  base.withValues(alpha: .12),
                 ],
               ),
-              border: Border.all(color: Colors.white.withOpacity(.06)),
+              border: Border.all(color: Colors.white.withValues(alpha: .06)),
             ),
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -268,7 +268,7 @@ class _ConsumablesGrid extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(.35),
+                            color: Colors.black.withValues(alpha: .35),
                             blurRadius: 16,
                           ),
                         ],
@@ -283,9 +283,9 @@ class _ConsumablesGrid extends StatelessWidget {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(.65),
+                          color: Colors.black.withValues(alpha: .65),
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: Colors.white.withOpacity(.12)),
+                          border: Border.all(color: Colors.white.withValues(alpha: .12)),
                         ),
                         child: Text(
                           '×${it.quantity}',
