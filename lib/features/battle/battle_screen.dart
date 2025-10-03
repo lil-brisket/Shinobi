@@ -9,6 +9,7 @@ import '../../models/stats.dart';
 import '../../models/jutsu.dart';
 import '../../widgets/bars.dart';
 import '../../controllers/providers.dart';
+import '../combat/providers/combat_provider.dart';
 
 /// Main battle screen widget
 class BattleScreen extends ConsumerStatefulWidget {
@@ -30,12 +31,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final battleState = ref.watch(battleProvider);
+    final combatState = ref.watch(combatProvider);
+    final battleState = combatState.battleState;
 
     // Check if battle is active (has players/enemies and not ended)
-    final isBattleActive = battleState.players.isNotEmpty && 
-                          battleState.enemies.isNotEmpty && 
-                          !battleState.isBattleEnded;
+    final isBattleActive = battleState?.players.isNotEmpty == true && 
+                          battleState?.enemies.isNotEmpty == true && 
+                          battleState?.isBattleEnded != true;
 
     return PopScope(
       canPop: !isBattleActive, // Prevent back navigation during active battle
@@ -66,7 +68,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 if (kShowTurnDebug) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Round ${battleState.roundNumber} • Turn #${battleState.turnIndexInRound + 1}',
+                    'Round ${battleState?.roundNumber ?? 1} • Turn #${(battleState?.turnIndexInRound ?? 0) + 1}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey,
                       fontSize: 10,
@@ -111,9 +113,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-  Widget _buildBattleContent(BattleState battleState) {
+  Widget _buildBattleContent(BattleState? battleState) {
     // Check if battle has been started
-    if (battleState.players.isEmpty && battleState.enemies.isEmpty) {
+    if (battleState == null || (battleState.players.isEmpty && battleState.enemies.isEmpty)) {
       return _buildNoBattleScreen();
     }
     
@@ -179,15 +181,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   Widget _buildBattleScreen() {
-    final battleState = ref.watch(battleProvider);
-    final ctrl = ref.read(battleProvider.notifier);
-    final p = battleState.livingPlayers.isNotEmpty ? battleState.livingPlayers.first : null;
+    final combatState = ref.watch(combatProvider);
+    final battleState = combatState.battleState;
+    final ctrl = ref.read(combatProvider.notifier);
+            final p = battleState?.livingPlayers.isNotEmpty == true ? battleState!.livingPlayers.first : null;
 
     if (p == null) return const SizedBox.shrink();
 
     // Choose a focused enemy to show bars for (first alive, or your selection)
-    final enemy = battleState.livingEnemies.isNotEmpty 
-        ? battleState.livingEnemies.first 
+    final enemy = battleState?.livingEnemies.isNotEmpty == true 
+        ? battleState!.livingEnemies.first 
         : null;
 
     // Sidebar width (responsive)
@@ -267,7 +270,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
                     // BASIC MOVES
                     _BasicActions(
-                      battleState: battleState,
+                      battleState: battleState!,
                       canAfford: (k) => p.ap >= k.ap && p.cp >= k.cp && p.sp >= k.sp,
                       onMove: () {
                         // If already in move mode, cancel it; otherwise enter move mode
@@ -279,7 +282,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       },
                       onPunch: () {
                         // If already in punch mode, cancel it; otherwise enter punch mode
-                        if (battleState.isPunchMode) {
+                        if (battleState!.isPunchMode) {
                           ctrl.cancelCurrentMode();
                         } else {
                           ctrl.togglePunchMode();
@@ -287,7 +290,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       },
                       onHeal: () {
                         // If already in heal mode, cancel it; otherwise enter heal mode
-                        if (battleState.isHealMode) {
+                        if (battleState!.isHealMode) {
                           ctrl.cancelCurrentMode();
                         } else {
                           ctrl.toggleHealMode();
@@ -305,9 +308,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       height: 90,
                       child: Consumer(
                         builder: (context, ref, child) {
-                          final currentBattleState = ref.watch(battleProvider);
-                          return currentBattleState.activeEntity != null 
-                            ? _buildJutsuGrid(ctrl, currentBattleState.activeEntity!, ref)
+                          final currentCombatState = ref.watch(combatProvider);
+                          final currentBattleState = currentCombatState.battleState;
+                                return currentBattleState?.activeEntity != null 
+                                  ? _buildJutsuGrid(currentBattleState!.activeEntity!, ref)
                             : Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
@@ -359,7 +363,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           border: Border.all(color: Colors.white10),
                         ),
                         padding: const EdgeInsets.all(10),
-                        child: _LogList(lines: battleState.log),
+                        child: _LogList(lines: battleState?.log ?? []),
                       ),
                     ),
                   ],
@@ -383,6 +387,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /*
   Widget _EnemySidebar({required BattleState battleState}) {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -419,7 +424,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
     );
   }
+  */
 
+  /*
   Widget _BattleLog({required BattleState battleState}) {
     return Container(
       height: 160,
@@ -434,6 +441,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
     );
   }
+  */
 
   void _showExitConfirmationDialog(BuildContext context) {
     showDialog(
@@ -452,7 +460,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           TextButton(
             onPressed: () {
               // Clear battle state before going back
-              ref.read(battleProvider.notifier).clearBattle();
+              ref.read(combatProvider.notifier).clearBattle();
               Navigator.of(context).pop(); // Close dialog
               Navigator.of(context).pop(); // Exit battle screen
             },
@@ -587,12 +595,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () {
-              // Clear battle state before going back
-              ref.read(battleProvider.notifier).clearBattle();
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Go back to battle grounds
-            },
+              onPressed: () {
+                // Clear battle state before going back
+                ref.read(combatProvider.notifier).clearBattle();
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to battle grounds
+              },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
               foregroundColor: Colors.white,
@@ -615,9 +623,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   void _handleHealAndFightAgain(BuildContext context, BattleState battleState) async {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     final playerNotifier = ref.read(playerProvider.notifier);
-    final battleController = ref.read(battleProvider.notifier);
+    final battleController = ref.read(combatProvider.notifier);
     
     // Check if player has enough Ryo
     final currentPlayer = ref.read(playerProvider);
@@ -726,7 +734,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       Navigator.of(context).pop();
 
       // Start new battle
-      battleController.startBattle(newBattleConfig);
+      ref.read(combatProvider.notifier).startBattle(newBattleConfig);
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -913,7 +921,7 @@ class _LogListState extends State<_LogList> {
 }
 
 
-  Widget _buildJutsuGrid(BattleController battleController, Entity activeEntity, WidgetRef ref) {
+  Widget _buildJutsuGrid(Entity activeEntity, WidgetRef ref) {
     // Get equipped jutsus from the provider - use watch to rebuild when jutsus change
     final jutsus = ref.watch(jutsusProvider);
     final equippedJutsus = jutsus.where((jutsu) => jutsu.isEquipped).toList();
@@ -940,16 +948,17 @@ class _LogListState extends State<_LogList> {
     }
 
     // Watch battle state at widget level to ensure reactivity
-    final battleState = ref.watch(battleProvider);
+    final combatState = ref.watch(combatProvider);
+    final battleState = combatState.battleState;
     
     // Create a grid of jutsu cards (max 7 jutsus)
     final jutsuCards = equippedJutsus.take(7).map((jutsu) {
       final canAfford = activeEntity.cp >= jutsu.chakraCost && activeEntity.ap >= jutsu.apCost;
-      final isSelected = battleState.selectedJutsuId == jutsu.id;
+      final isSelected = battleState?.selectedJutsuId == jutsu.id;
       return Expanded(
         child: _buildJutsuCard(
           jutsu: jutsu,
-          onTap: canAfford ? () => battleController.selectJutsu(jutsu.id) : null,
+          onTap: canAfford ? () => ref.read(combatProvider.notifier).selectJutsu(jutsu.id) : null,
           canAfford: canAfford,
           isSelected: isSelected,
         ),
@@ -1055,6 +1064,7 @@ class _LogListState extends State<_LogList> {
   }
 
 
+/*
 class _CostPill extends StatelessWidget {
   final String text;
   const _CostPill(this.text, {super.key});
@@ -1070,6 +1080,7 @@ class _CostPill extends StatelessWidget {
     );
   }
 }
+*/
 
 /// Battle screen with custom routing (if needed)
 class BattleScreenRoute extends StatelessWidget {

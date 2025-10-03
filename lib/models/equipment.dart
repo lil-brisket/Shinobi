@@ -7,7 +7,7 @@ part 'equipment.g.dart';
 enum SlotType { head, body, legs, feet, armLeft, armRight, waist }
 
 /// Type of item (keeps your existing consumables etc.)
-enum ItemKind { consumable, equipment, material, jutsu, quest }
+enum ItemKind { all, consumable, equipment, material, jutsu, quest }
 
 /// Optional size classification for quick‑access storage (waist)
 enum ItemSize { small, normal, large }

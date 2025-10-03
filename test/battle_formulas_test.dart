@@ -96,12 +96,14 @@ void main() {
       expect(damage, greaterThanOrEqualTo(BalanceConfig.minDamage));
       
       // Should have variance
+      /*
       final damage2 = BattleFormulas.calcDamage(
         attacker: attacker,
         defender: defender,
         rngIntInclusive: testRngIntInclusive,
         rngRollUnder: testRngRollUnder,
       );
+      */
       
       // Damage should be different due to variance (unless crit)
       expect(damage, isA<int>());

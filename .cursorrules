@@ -1,0 +1,149 @@
+# .cursorrules
+# Shinobi (Flutter) — Project Rules for Cursor
+# Purpose: Keep AI changes safe, consistent, and aligned with our architecture, tooling, and game design.
+
+## GOLDEN RULES
+- Do not invent files, packages, or APIs. If you need something new, propose it in a patch plan first.
+- Prefer small, explicit diffs. Touch only files you must; do not refactor unrelated code.
+- Keep public APIs stable. If a breaking change is unavoidable, include migration notes in the PR description.
+- Maintain null-safety and strong types; avoid `dynamic` unless interfacing with external JSON.
+- Every feature/change must include: update to tests (if applicable), error handling, and basic docs/comments.
+
+## REPOSITORY MAP (truth source; update when structure changes)
+- lib/
+  - app/              # app bootstrap, routing, themes, localization
+  - features/
+    - home/
+    - village_hub/    # dojo, item_shop, hospital, clan_hall, bank, battle_grounds, mission_centre, dueling_academy
+    - inventory/      # items + jutsu
+    - map/            # grid map (5x12 or 10x5), movement
+    - profile/        # avatar, stats, ranks
+    - combat/         # battle screen, AP system, jutsu targeting
+  - common/           # shared UI (widgets), utils, theme tokens, models
+  - data/             # repositories, DTOs, Supabase services
+  - state/            # Riverpod providers (app-wide), not feature-specific
+- test/               # unit + widget tests
+- assets/             # images, icons, fonts (managed via flutter_gen if present)
+- pubspec.yaml        # dependencies, assets
+- supabase/           # SQL, policies, edge functions (if used)
+- analysis_options.yaml  # lints
+
+## ARCHITECTURE
+- Use **feature-first** structure. Each feature owns: `widgets/`, `providers/`, `models/`, `repo/` (if feature-scoped).
+- **State management:** Riverpod (prefer `Notifier`/`AsyncNotifier` over raw Providers for stateful flows).
+- **Data layer:** Repositories that wrap Supabase and return typed domain models. Never call Supabase directly from UI.
+- **Navigation:** `go_router` (if present) or `Navigator 2.0` with typed routes; no ad-hoc push calls scattered in widgets.
+- **Theming:** Centralize color, spacing, radius, and typography tokens in `common/theme/`. All widgets consume tokens.
+- **Error handling:** Bubble typed failures (`Failure` sealed classes) from repo→provider→UI. UI shows snackbars/alerts non-blocking.
+
+## RIVERPOD RULES
+- Use `@riverpod` code gen or `Notifier/AsyncNotifier` classes for complex state.
+- Keep providers lean: side-effects in repositories, orchestration in Notifiers, rendering in Widgets.
+- Never read providers in constructors. Use `ref.watch`/`ref.listen` in `build` or `initState` (via `ConsumerWidget` or `HookConsumerWidget`).
+- Naming: `<feature><Thing>Provider` (e.g., `inventoryItemsProvider`), `<Feature><Thing>Notifier`.
+
+## SUPABASE RULES
+- All Supabase calls live under `lib/data/` in a `<feature>_repository.dart` or shared `supabase_service.dart`.
+- Always map `PostgrestResponse` → DTO → Domain Model. No `Map<String, dynamic>` escapes the data layer.
+- Handle network/auth errors explicitly; never swallow exceptions. Convert to `Failure`.
+- For auth: expose a single source of truth provider `authStateProvider` and derived providers for user profile.
+- SQL migrations belong in `supabase/`. Provide a short migration plan and a rollback note in the PR.
+
+## COMBAT / MAP CONSTRAINTS (game-specific)
+- Battle grid default: 5x12 (landscape) or 10x5 (portrait). Use constants: `kGridRows`, `kGridCols`.
+- AP system: default 100 AP/turn; basic moves (Move, Punch, Heal) cost 20 AP each. Make costs constants and render from source of truth.
+- Jutsu targeting: visualize legal tiles via overlay; only execute on valid target tile. Keep targeting logic pure/testable.
+- HP/CP/SP bars: top or side (as per current design). Update via providers; no setState micro-updates.
+
+## UI / WIDGET PATTERNS
+- Use `StatelessWidget` unless local mutable state is required; otherwise `HookConsumerWidget`.
+- Extract reusable UI into `common/widgets/`. Follow composable, small widgets over monoliths.
+- Accessibility: text scales, tappable areas ≥ 44x44, semantic labels for icons.
+- No inline magic numbers. Use theme tokens: `gap.xs/s/m/l/xl`, `radius.lg`, etc.
+
+## CODING STANDARDS
+- Dart: Effective Dart style; prefer expression-bodied where clear; avoid cascade abuse.
+- Naming: PascalCase types; lowerCamelCase fields/methods; UPPER_SNAKE for constants.
+- Files: snake_case. One top-level type per file.
+- Lints: fix all errors before commit; allow warnings only with TODO and rationale.
+- Logging: wrap `dart:developer` or `logger` behind `common/log.dart`. Tag messages with `[Feature]`.
+
+## TESTING
+- Unit tests for providers and repositories. Widget tests for critical screens (Inventory, Combat, Map).
+- For providers, test success, loading, and error branches. For repos, mock Supabase client.
+- If you change logic, update tests the same PR. Add at least a smoke test for new screens.
+
+## PERFORMANCE
+- Avoid rebuilding large trees: split widgets, use `select()` with Riverpod, memoize derived state.
+- Debounce searches (e.g., user lookups, item shop) with `Timer` or `stream.debounce`.
+- Prefer `const` constructors and `const` where possible.
+
+## SECURITY
+- Never log secrets, JWTs, or PII. Keep env in `.env`/runtime config; do not hardcode.
+- Validate all inputs before DB writes. Enforce RLS in Supabase; do not rely on client-side checks.
+
+## WORKFLOW WITH CURSOR (very important)
+- Before code: Ask Cursor to **plan** the change with a patch plan (files touched, new files, risk, tests).
+- During edits: Keep diffs minimal, preserve comments and TODOs.
+- After edits: Ask Cursor to run static analysis (`flutter analyze`) in the plan and include expected output.
+- If unsure about Flutter specifics, prefer Flutter/Dart official patterns over ad-hoc solutions.
+
+## PATH SCOPES (guidance for Cursor; human-readable)
+[scope: lib/**]
+- Never introduce platform channel code here; keep platform integrations under `platform/` (if any).
+- Add imports sorted: dart → package/flutter → third-party → local.
+- When creating widgets, add doc comments for props and default behaviors.
+
+[scope: lib/data/**]
+- No UI imports. Only DTOs, repositories, and mappers. All network/DB errors mapped to `Failure`.
+- New repo? Provide interface + concrete class. Document all methods and return types.
+
+[scope: lib/features/**]
+- Feature owns screen widgets and feature-scoped providers. Prefer dependency injection via providers.
+
+[scope: test/**]
+- Mirror folder structure of `lib/`. Provide fakes/mocks. Keep tests deterministic and independent.
+
+## COMMIT / PR HYGIENE
+- Conventional commits: `feat(inventory): add equipment slots panel`, `fix(bank): correct interest calc`, etc.
+- PR must include:
+  - Summary, acceptance criteria, screenshots/GIFs.
+  - Risk assessment + rollback plan (esp. DB migrations).
+  - Test plan with commands.
+
+## TASK TEMPLATES (paste into Cursor before coding)
+### 1) Small UI Change
+PLAN:
+- Files to edit:
+- Visual changes:
+- Risks:
+- Tests (widget/screenshot?):
+IMPLEMENT:
+- Apply diff.
+- Run `flutter analyze` and `flutter test`.
+
+### 2) New Provider (Riverpod)
+PLAN:
+- Create `lib/features/<feature>/providers/<name>_provider.dart` using `Notifier/AsyncNotifier`.
+- Wire to repo; define states.
+- Add tests.
+IMPLEMENT:
+- Provider + unit tests; example usage in screen.
+- Update docs/comments.
+
+### 3) Supabase Repo Method
+PLAN:
+- Update `<feature>_repository.dart` + DTO and mapper.
+- Error mapping → `Failure`.
+- Add tests with mocked client.
+IMPLEMENT:
+- Method, DTO, mapper, tests.
+
+## DO NOTS
+- Do not bypass repositories by calling Supabase from UI.
+- Do not add global singletons for state; always providers.
+- Do not leave TODOs without an accompanying GitHub issue link or follow-up note.
+- Do not change theme tokens ad-hoc; edit centralized theme files only.
+
+## FOOTNOTES
+- Cursor loads rules from `.cursorrules` or per-file rules under `.cursor/rules` (scoped by path patterns). Keep this file updated as the source of truth. (See Cursor's official rules docs.)

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../controllers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../constants/villages.dart';
 

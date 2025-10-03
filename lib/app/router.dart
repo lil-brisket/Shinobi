@@ -21,7 +21,7 @@ import '../screens/inventory/jutsus_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
-import '../controllers/auth_provider.dart';
+import '../features/auth/providers/auth_provider.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../controllers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -66,8 +66,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void _navigateBasedOnAuth() {
     if (!mounted) return;
     
+    // Check current auth state and navigate accordingly
     final authState = ref.read(authProvider);
-    
     if (authState.isAuthenticated) {
       context.go('/home');
     } else {

@@ -212,7 +212,7 @@ class BattleFormulas {
     
     final minDmg = math.max(BalanceConfig.minDamage, (base + BalanceConfig.punchVarianceMin).floor());
     final maxDmg = math.max(BalanceConfig.minDamage, (base + BalanceConfig.punchVarianceMax).floor());
-    final critMin = math.max(BalanceConfig.minDamage, (minDmg * BalanceConfig.critMultiplier).floor());
+    // final critMin = math.max(BalanceConfig.minDamage, (minDmg * BalanceConfig.critMultiplier).floor());
     final critMax = math.max(BalanceConfig.minDamage, (maxDmg * BalanceConfig.critMultiplier).floor());
     
     return (

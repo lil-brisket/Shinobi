@@ -44,7 +44,7 @@ class InventoryScreen extends StatelessWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      const ImprovedInventoryLayout(),
+                      const HumanEquipmentLayout(),
                       const JutsusScreen(),
                     ],
                   ),

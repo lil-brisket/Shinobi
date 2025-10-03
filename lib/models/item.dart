@@ -5,6 +5,8 @@ part 'item.freezed.dart';
 part 'item.g.dart';
 
 enum ItemRarity {
+  @JsonValue('all')
+  all,
   @JsonValue('common')
   common,
   @JsonValue('uncommon')

@@ -232,6 +232,8 @@ class ItemShopScreen extends ConsumerWidget {
 
   Color _getRarityColor(ItemRarity rarity) {
     switch (rarity) {
+      case ItemRarity.all:
+        return Colors.grey;
       case ItemRarity.common:
         return Colors.grey;
       case ItemRarity.uncommon:

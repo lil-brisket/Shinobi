@@ -7,14 +7,16 @@ import '../models/jutsu.dart';
 import '../models/mission.dart';
 import '../models/village.dart';
 import '../models/news.dart';
-import 'auth_provider.dart';
+import '../features/auth/providers/auth_provider.dart';
+import '../data/repositories/player_repository.dart';
 import '../models/chat.dart';
 import '../models/timer.dart';
 import '../constants/villages.dart';
 
-// Player Provider
+// Player Provider - Updated to use repository pattern
 final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
-  return PlayerNotifier();
+  final playerRepository = ref.watch(playerRepositoryProvider);
+  return PlayerNotifier(playerRepository);
 });
 
 // Current player with proper village and username
@@ -31,7 +33,9 @@ final currentPlayerProvider = Provider<Player>((ref) {
 });
 
 class PlayerNotifier extends StateNotifier<Player> {
-  PlayerNotifier() : super(Player(
+  final PlayerRepository _playerRepository;
+  
+  PlayerNotifier(this._playerRepository) : super(Player(
     id: 'player_001',
     name: 'Naruto_Uzumaki',
     avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=N',
@@ -63,10 +67,19 @@ class PlayerNotifier extends StateNotifier<Player> {
     rank: PlayerRank.chunin, // Set to chunin to test village change functionality
   ));
 
-  void updateStats(PlayerStats newStats) {
-    // Debug: Player stats updated
-    state = state.copyWith(stats: newStats);
-    // Debug: State updated successfully
+  Future<void> updateStats(PlayerStats newStats) async {
+    try {
+      // Update stats via repository
+      final result = await _playerRepository.updatePlayerStats(state.id, newStats);
+      
+      if (result.success) {
+        // Update local state
+        state = state.copyWith(stats: newStats);
+      }
+      // Handle failure if needed
+    } catch (e) {
+      // Handle error
+    }
   }
 
   void updatePlayer(Player newPlayer) {
@@ -74,7 +87,8 @@ class PlayerNotifier extends StateNotifier<Player> {
   }
 }
 
-// Inventory Provider
+// TODO: Move to lib/features/inventory/providers/inventory_provider.dart
+// Inventory Provider - Legacy provider, should use feature structure
 final inventoryProvider = StateProvider<List<Item>>((ref) {
   return [
     const Item(

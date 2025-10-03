@@ -7,7 +7,7 @@ import '../../widgets/currency_pill.dart';
 import '../../widgets/user_stats_panel.dart';
 import '../../app/theme.dart';
 import '../../controllers/providers.dart';
-import '../../controllers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../constants/villages.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../models/stats.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../controllers/auth_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 class StartScreen extends ConsumerWidget {
   const StartScreen({super.key});
@@ -213,9 +213,17 @@ class StartScreen extends ConsumerWidget {
   }
 
   void _continueAsGuest(BuildContext context, WidgetRef ref) async {
-    await ref.read(authProvider.notifier).continueAsGuest();
-    if (context.mounted) {
+    final success = await ref.read(authProvider.notifier).continueAsGuest();
+    if (context.mounted && success) {
       context.go('/home');
+    } else if (context.mounted) {
+      // Show error if guest login failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to continue as guest. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

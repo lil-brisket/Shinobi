@@ -38,6 +38,7 @@ Map<String, dynamic> _$$ItemImplToJson(_$ItemImpl instance) =>
     };
 
 const _$ItemRarityEnumMap = {
+  ItemRarity.all: 'all',
   ItemRarity.common: 'common',
   ItemRarity.uncommon: 'uncommon',
   ItemRarity.rare: 'rare',
@@ -46,6 +47,7 @@ const _$ItemRarityEnumMap = {
 };
 
 const _$ItemKindEnumMap = {
+  ItemKind.all: 'all',
   ItemKind.consumable: 'consumable',
   ItemKind.equipment: 'equipment',
   ItemKind.material: 'material',
