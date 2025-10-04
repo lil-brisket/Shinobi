@@ -30,20 +30,20 @@ CREATE TABLE players (
   email TEXT NOT NULL,
   avatar_url TEXT,
   village_id UUID REFERENCES villages(id) NOT NULL,
-  ryo INTEGER DEFAULT 10000 CHECK (ryo >= 0),
+  ryo INTEGER DEFAULT 500 CHECK (ryo >= 0), -- Starting pocket money
   
-  -- Core stats (max 250k each)
+  -- Core stats (max 250k each) - minimal starting values
   level INTEGER DEFAULT 1 CHECK (level >= 1),
-  str INTEGER DEFAULT 1000 CHECK (str >= 0 AND str <= 250000),
-  intl INTEGER DEFAULT 1000 CHECK (intl >= 0 AND intl <= 250000),
-  spd INTEGER DEFAULT 1000 CHECK (spd >= 0 AND spd <= 250000),
-  wil INTEGER DEFAULT 1000 CHECK (wil >= 0 AND wil <= 250000),
+  str INTEGER DEFAULT 100 CHECK (str >= 0 AND str <= 250000),
+  intl INTEGER DEFAULT 100 CHECK (intl >= 0 AND intl <= 250000),
+  spd INTEGER DEFAULT 100 CHECK (spd >= 0 AND spd <= 250000),
+  wil INTEGER DEFAULT 100 CHECK (wil >= 0 AND wil <= 250000),
   
-  -- Combat stats (max 500k each)
-  nin INTEGER DEFAULT 1000 CHECK (nin >= 0 AND nin <= 500000),
-  gen INTEGER DEFAULT 1000 CHECK (gen >= 0 AND gen <= 500000),
-  buk INTEGER DEFAULT 1000 CHECK (buk >= 0 AND buk <= 500000),
-  tai INTEGER DEFAULT 1000 CHECK (tai >= 0 AND tai <= 500000),
+  -- Combat stats (max 500k each) - minimal starting values
+  nin INTEGER DEFAULT 100 CHECK (nin >= 0 AND nin <= 500000),
+  gen INTEGER DEFAULT 100 CHECK (gen >= 0 AND gen <= 500000),
+  buk INTEGER DEFAULT 100 CHECK (buk >= 0 AND buk <= 500000),
+  tai INTEGER DEFAULT 100 CHECK (tai >= 0 AND tai <= 500000),
   
   -- Current HP/SP/CP
   current_hp INTEGER DEFAULT 600 CHECK (current_hp >= 0),
@@ -216,7 +216,7 @@ CREATE TABLE banking (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   player_id UUID REFERENCES players(id) ON DELETE CASCADE,
   account_type TEXT CHECK (account_type IN ('savings', 'investment')) DEFAULT 'savings',
-  balance INTEGER DEFAULT 0 CHECK (balance >= 0),
+  balance INTEGER DEFAULT 5000 CHECK (balance >= 0), -- Starting bank balance
   interest_rate DECIMAL(5,4) DEFAULT 0.0000 CHECK (interest_rate >= 0),
   last_interest TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

@@ -1,27 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../models/player.dart' as player_model;
 import '../../models/player.dart';
 import '../../models/stats.dart';
 import '../../services/supabase_service.dart';
 import '../../config/supabase_config.dart';
-import '../failures.dart';
+import 'auth_repository.dart';
 
 /// Supabase implementation of AuthRepository
-class SupabaseAuthRepository {
+class SupabaseAuthRepository implements AuthRepository {
   final SupabaseService _supabaseService = SupabaseService.instance;
   final _uuid = const Uuid();
 
   /// Login with email and password
-  Future<({Player? player, String? error})> login(String email, String password) async {
+  @override
+  Future<({Player? player, String? error})> login(String username, String password) async {
     try {
-      final result = await _supabaseService.signIn(email: email, password: password);
+      final result = await _supabaseService.signIn(email: username, password: password);
       
       if (result.userId != null) {
         // Get player data
         final playerResult = await _supabaseService.getPlayerByAuthId(result.userId!);
         
         if (playerResult.player != null) {
-          return (player: playerResult.player, error: null);
+          return (player: playerResult.player as Player, error: null);
         } else {
           return (player: null, error: 'Failed to load player data');
         }
@@ -34,12 +36,8 @@ class SupabaseAuthRepository {
   }
 
   /// Register new player
-  Future<({Player? player, String? error})> register({
-    required String username,
-    required String email,
-    required String password,
-    required String villageId,
-  }) async {
+  @override
+  Future<({Player? player, String? error})> register(String username, String email, String password, String villageId) async {
     try {
       // Create auth user
       final authResult = await _supabaseService.signUp(
@@ -54,13 +52,13 @@ class SupabaseAuthRepository {
         final player = _createNewPlayer(authResult.userId!, username, villageId);
         
         // Save player to database
-        final saveResult = await _supabaseService.updatePlayer(player);
+        final saveResult = await _supabaseService.createPlayer(player);
         
         if (saveResult.player != null) {
           // Add default items and jutsus
-          await _addDefaultPlayerData(player.id);
+          await _addDefaultPlayerData(saveResult.player!.id);
           
-          return (player: saveResult.player, error: null);
+          return (player: saveResult.player as Player, error: null);
         } else {
           return (player: null, error: 'Failed to create player profile');
         }
@@ -73,11 +71,13 @@ class SupabaseAuthRepository {
   }
 
   /// Logout current user
+  @override
   Future<void> logout() async {
     await _supabaseService.signOut();
   }
 
   /// Continue as guest (create temporary player)
+  @override
   Future<({Player? player, String? error})> continueAsGuest() async {
     try {
       final guestId = _uuid.v4();
@@ -86,19 +86,20 @@ class SupabaseAuthRepository {
       final player = _createGuestPlayer(guestId, defaultVillageId);
       
       // Note: Guest players are not saved to database
-      return (player: player, error: null);
+      return (player: player as Player, error: null);
     } catch (e) {
       return (player: null, error: 'Guest login failed: $e');
     }
   }
 
   /// Get current authenticated user
+  @override
   Future<Player?> getCurrentUser() async {
     try {
       final currentUser = _supabaseService.currentUser;
       if (currentUser != null) {
         final result = await _supabaseService.getPlayerByAuthId(currentUser.id);
-        return result.player;
+        return result.player as Player?;
       }
       return null;
     } catch (e) {
@@ -107,6 +108,7 @@ class SupabaseAuthRepository {
   }
 
   /// Check if user is authenticated
+  @override
   Future<bool> isAuthenticated() async {
     try {
       return _supabaseService.currentUser != null;
@@ -116,26 +118,26 @@ class SupabaseAuthRepository {
   }
 
   /// Create new player with starting stats
-  Player _createNewPlayer(String userId, String username, String villageId) {
-    return Player(
+  player_model.Player _createNewPlayer(String userId, String username, String villageId) {
+    return player_model.Player(
       id: userId,
       name: username,
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
       village: 'Willowshade Village', // Will be updated from database
-      ryo: 10000, // Starting ryo for new players
+      ryo: 500, // Starting ryo for new players (pocket money)
       stats: const PlayerStats(
         level: 1,
-        str: 1000,
-        intl: 1000,
-        spd: 1000,
-        wil: 1000,
-        nin: 1000,
-        gen: 1000,
-        buk: 1000,
-        tai: 1000,
-        currentHP: 600,
-        currentSP: 600,
-        currentCP: 600,
+        str: 100,    // Minimal starting stats
+        intl: 100,
+        spd: 100,
+        wil: 100,
+        nin: 100,
+        gen: 100,
+        buk: 100,
+        tai: 100,
+        currentHP: 600,  // Level-based HP (500 + 100*1)
+        currentSP: 600,  // Level-based SP (500 + 100*1)
+        currentCP: 600,  // Level-based CP (500 + 100*1)
       ),
       jutsuIds: ['basic_punch'],
       itemIds: ['kunai'],
@@ -148,8 +150,8 @@ class SupabaseAuthRepository {
   }
 
   /// Create guest player
-  Player _createGuestPlayer(String guestId, String villageId) {
-    return Player(
+  player_model.Player _createGuestPlayer(String guestId, String villageId) {
+    return player_model.Player(
       id: guestId,
       name: 'Guest Player',
       avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
@@ -206,14 +208,14 @@ class SupabaseAuthRepository {
             },
           ]);
 
-      // Create default banking account
+      // Create default banking account with starting balance
       await _supabaseService.client
           .from(SupabaseConfig.bankingTable)
           .insert([
             {
               'player_id': playerId,
               'account_type': 'savings',
-              'balance': 0,
+              'balance': 5000, // Starting bank balance for new players
               'interest_rate': 0.0005, // 0.05% per day
             },
           ]);
