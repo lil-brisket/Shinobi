@@ -11,8 +11,8 @@ class BankingService {
   final Uuid _uuid = const Uuid();
   
   // Mock state to persist balances across operations
-  static int _mockPocketBalance = 5000;
-  static int _mockBankBalance = 25000;
+  static int _mockPocketBalance = 500;  // Starting pocket money
+  static int _mockBankBalance = 5000;   // Starting bank balance
   static final List<LedgerEntry> _mockLedger = [];
 
   // Helper method to make authenticated requests

@@ -218,10 +218,76 @@ class SupabaseService {
   //   // Implementation pending
   // }
   
-  // TODO: Implement timer methods when models are properly defined
-  // Future<({List<timer.Timer>? timers, Failure? failure})> getPlayerTimers(String playerId) async {
-  //   // Implementation pending
-  // }
+  // Timer methods
+  Future<({List<Map<String, dynamic>>? timers, Failure? failure})> getPlayerTimers(String playerId) async {
+    try {
+      final response = await client
+          .from('timers')
+          .select('*')
+          .eq('player_id', playerId)
+          .eq('is_active', true)
+          .order('started_at', ascending: false);
+      
+      return (timers: List<Map<String, dynamic>>.from(response), failure: null);
+    } catch (e) {
+      return (timers: null, failure: ServerFailure('Failed to fetch timers: $e'));
+    }
+  }
+
+  Future<({Map<String, dynamic>? timer, Failure? failure})> createTimer(Map<String, dynamic> timerData) async {
+    try {
+      final response = await client
+          .from('timers')
+          .insert(timerData)
+          .select()
+          .single();
+      
+      return (timer: response, failure: null);
+    } catch (e) {
+      return (timer: null, failure: ServerFailure('Failed to create timer: $e'));
+    }
+  }
+
+  Future<({Map<String, dynamic>? timer, Failure? failure})> updateTimer(String timerId, Map<String, dynamic> updates) async {
+    try {
+      final response = await client
+          .from('timers')
+          .update(updates)
+          .eq('id', timerId)
+          .select()
+          .single();
+      
+      return (timer: response, failure: null);
+    } catch (e) {
+      return (timer: null, failure: ServerFailure('Failed to update timer: $e'));
+    }
+  }
+
+  Future<({bool success, Failure? failure})> deleteTimer(String timerId) async {
+    try {
+      await client
+          .from('timers')
+          .delete()
+          .eq('id', timerId);
+      
+      return (success: true, failure: null);
+    } catch (e) {
+      return (success: false, failure: ServerFailure('Failed to delete timer: $e'));
+    }
+  }
+
+  Future<({bool success, Failure? failure})> completeTimer(String timerId) async {
+    try {
+      await client
+          .from('timers')
+          .update({'is_active': false})
+          .eq('id', timerId);
+      
+      return (success: true, failure: null);
+    } catch (e) {
+      return (success: false, failure: ServerFailure('Failed to complete timer: $e'));
+    }
+  }
   
   // Helper methods for mapping data
   player_model.Player mapPlayerFromJson(Map<String, dynamic> json) {

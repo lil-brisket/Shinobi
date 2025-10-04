@@ -22,6 +22,7 @@ import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
 import '../features/auth/providers/auth_provider.dart';
+import '../debug_timer_test.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -36,9 +37,10 @@ class AppRouter {
         final isAuthRoute = state.uri.path.startsWith('/login') ||
             state.uri.path.startsWith('/register') ||
             state.uri.path.startsWith('/start');
+        final isDebugRoute = state.uri.path.startsWith('/debug-timers');
         
         // If not authenticated and trying to access protected routes
-        if (!authState.isAuthenticated && !isAuthRoute && state.uri.path != '/') {
+        if (!authState.isAuthenticated && !isAuthRoute && !isDebugRoute && state.uri.path != '/') {
           return '/start';
         }
         
@@ -76,6 +78,11 @@ class AppRouter {
         path: '/register',
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/debug-timers',
+        name: 'debug-timers',
+        builder: (context, state) => const DebugTimerTest(),
       ),
       
       // Protected Game Routes (inside shell)

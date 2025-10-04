@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../utils/snackbar_utils.dart';
 
@@ -13,16 +14,51 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRememberedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberedEmail = prefs.getString('remembered_email');
+    final rememberedPassword = prefs.getString('remembered_password');
+    final shouldRemember = prefs.getBool('remember_me') ?? false;
+    
+    if (shouldRemember && rememberedEmail != null && rememberedPassword != null) {
+      setState(() {
+        _emailController.text = rememberedEmail;
+        _passwordController.text = rememberedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
+
+  Future<void> _saveRememberedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString('remembered_email', _emailController.text.trim());
+      await prefs.setString('remembered_password', _passwordController.text);
+      await prefs.setBool('remember_me', true);
+    } else {
+      await prefs.remove('remembered_email');
+      await prefs.remove('remembered_password');
+      await prefs.remove('remember_me');
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -32,14 +68,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final success = await ref.read(authProvider.notifier).login(
-        _usernameController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (success && mounted) {
+        // Save credentials if remember me is checked
+        await _saveRememberedCredentials();
         context.go('/home');
       } else if (mounted) {
-        _showErrorSnackBar('Invalid username or password');
+        _showErrorSnackBar('Invalid email or password');
       }
     } catch (e) {
       if (mounted) {
@@ -130,15 +168,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        // Username Field
+                        // Email Field
                         TextFormField(
-                          controller: _usernameController,
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Username',
+                            labelText: 'Email',
                             labelStyle: const TextStyle(color: Colors.white70),
                             prefixIcon: const Icon(
-                              Icons.person,
+                              Icons.email,
                               color: Color(0xFFff6b35),
                             ),
                             border: OutlineInputBorder(
@@ -165,7 +204,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your username';
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email address';
                             }
                             return null;
                           },
@@ -226,6 +268,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             }
                             return null;
                           },
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Remember Me Checkbox
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                              },
+                              activeColor: const Color(0xFFff6b35),
+                              checkColor: Colors.white,
+                            ),
+                            const Text(
+                              'Remember Me',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                         
                         const SizedBox(height: 24),

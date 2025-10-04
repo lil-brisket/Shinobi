@@ -125,6 +125,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
                 const SectionHeader(title: 'Training Options'),
                 const SizedBox(height: 16),
                 
@@ -407,22 +408,61 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     );
   }
 
-  void _startTraining(String statType, Duration duration) {
+  void _startTraining(String statType, Duration duration) async {
     // Calculate stat increase based on duration (1 stat point per 30 minutes)
     final totalMinutes = duration.inMinutes;
     int statIncrease = (totalMinutes / 30).round(); // 1 stat per 30 minutes
     
-    ref.read(timersProvider.notifier).startTrainingTimer(statType, duration, statIncrease);
+    try {
+      await ref.read(timersProvider.notifier).startTrainingTimer(statType, duration, statIncrease);
+      
+      // Check if the timer was actually added
+      final timers = ref.read(timersProvider);
+      final trainingTimer = timers.where((timer) => 
+          timer.type == TimerType.training && 
+          timer.metadata?['statType'] == statType &&
+          !timer.isCompleted
+      ).firstOrNull;
 
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-    String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+      if (trainingTimer != null) {
+        final hours = duration.inHours;
+        final minutes = duration.inMinutes % 60;
+        String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
-    SnackbarUtils.showSuccess(
-      context,
-      'Started $statType training for $durationText! Only one training session allowed at a time.',
-      backgroundColor: AppTheme.accentColor,
-    );
+        SnackbarUtils.showSuccess(
+          context,
+          'Started $statType training for $durationText! Only one training session allowed at a time.',
+          backgroundColor: AppTheme.accentColor,
+        );
+      } else {
+        SnackbarUtils.showError(
+          context,
+          'Failed to start training. The timer was not created properly. Please try again.',
+          backgroundColor: Colors.red,
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'Failed to start training. ';
+      
+      // Provide more specific error messages based on the error
+      if (e.toString().contains('Database connection')) {
+        errorMessage += 'Database connection issue. Training will work offline for guest users.';
+      } else if (e.toString().contains('Failed to create timer')) {
+        errorMessage += 'Timer creation failed. Please try again.';
+      } else if (e.toString().contains('Failed to start training timer')) {
+        errorMessage += 'Training system error. Please try again.';
+      } else if (e.toString().contains('auth')) {
+        errorMessage += 'Authentication error. Training will work offline for guest users.';
+      } else {
+        errorMessage += 'Unknown error: ${e.toString()}';
+      }
+      
+      SnackbarUtils.showError(
+        context,
+        errorMessage,
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   void _cancelTraining(String timerId, String statType) {
@@ -530,9 +570,9 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     );
   }
 
-  void _processCancelledTraining(GameTimer timer, String statType, int partialStatIncrease) {
+  void _processCancelledTraining(GameTimer timer, String statType, int partialStatIncrease) async {
     // Remove the timer
-    ref.read(timersProvider.notifier).removeTimer(timer.id);
+    await ref.read(timersProvider.notifier).removeTimer(timer.id);
     
     if (partialStatIncrease > 0) {
       // Apply direct stat increases
@@ -750,11 +790,11 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     );
   }
 
-  void _collectTraining(String timerId, String statType) {
+  void _collectTraining(String timerId, String statType) async {
     final timers = ref.read(timersProvider);
     final timer = timers.firstWhere((t) => t.id == timerId);
     
-    ref.read(timersProvider.notifier).completeTimer(timerId);
+    await ref.read(timersProvider.notifier).completeTimer(timerId);
 
     // Update player stats using direct stat increases
     final player = ref.read(playerProvider);

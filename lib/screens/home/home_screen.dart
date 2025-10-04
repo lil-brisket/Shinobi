@@ -11,7 +11,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final player = ref.watch(currentPlayerProvider);
+    final player = ref.watch(syncedPlayerProvider);
     final news = ref.watch(newsProvider);
     final chatMessages = ref.watch(chatProvider);
 

@@ -9,6 +9,7 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 ## ✨ Features
 
 ### Core Gameplay
+
 - **Character Progression**: Train your ninja with various stats and abilities
 - **Jutsu System**: Learn and master powerful ninja techniques
 - **Mission System**: Complete missions to gain experience and rewards
@@ -16,6 +17,7 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 - **Village Hub**: Explore different areas like training dojos, item shops, and more
 
 ### Game Areas
+
 - **Training Dojo**: Improve your ninja skills
 - **Mission Centre**: Accept and complete various missions
 - **Item Shop**: Purchase equipment and consumables
@@ -26,6 +28,7 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 - **Bank**: Manage your in-game currency
 
 ### Technical Features
+
 - **State Management**: Built with Riverpod for efficient state management
 - **Navigation**: Smooth routing with Go Router
 - **Audio**: Immersive sound effects and background music
@@ -46,6 +49,7 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Flutter SDK (>=3.0.0)
 - Dart SDK
 - Android Studio / VS Code
@@ -54,17 +58,20 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <your-repo-url>
    cd shogunx
    ```
 
 2. **Install dependencies**
+
    ```bash
    flutter pub get
    ```
 
 3. **Generate code**
+
    ```bash
    flutter packages pub run build_runner build
    ```
@@ -72,11 +79,13 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 4. **Run the app**
 
    **For Web (Port 3000):**
+
    ```bash
    flutter run -d edge --web-port 3000
    ```
-   
+
    **For other platforms:**
+
    ```bash
    # List available devices
    flutter devices
@@ -95,7 +104,7 @@ ShogunX is a mobile MMORPG that brings the world of ninjas to your fingertips. T
 
 ## 📁 Project Structure
 
-```
+```text
 lib/
 ├── app/                    # App configuration (router, theme)
 ├── constants/             # Game constants (villages, etc.)
@@ -115,6 +124,7 @@ lib/
 ## 🎮 Game Mechanics
 
 ### Character Stats
+
 - **Health**: Your ninja's vitality
 - **Chakra**: Energy for using jutsus
 - **Stamina**: Physical endurance
@@ -123,6 +133,7 @@ lib/
 - **Intelligence**: Learning and jutsu mastery
 
 ### Progression System
+
 - **Ranks**: Advance through ninja ranks
 - **Equipment**: Gear that enhances your abilities
 - **Jutsus**: Special techniques with unique effects
@@ -133,23 +144,27 @@ lib/
 ### Web Development (Recommended for Development)
 
 **Run on Port 3000:**
+
 ```bash
 flutter run -d edge --web-port 3000
 ```
 
 **Access the app:**
+
 - Open your browser and go to: `http://localhost:3000`
 - The app will automatically reload when you make changes (hot reload)
 
 ### Mobile Development
 
 **Android:**
+
 ```bash
 # Start Android emulator first, then:
 flutter run -d android
 ```
 
 **iOS (macOS only):**
+
 ```bash
 # Start iOS simulator first, then:
 flutter run -d ios
@@ -158,16 +173,19 @@ flutter run -d ios
 ### Desktop Development
 
 **Windows:**
+
 ```bash
 flutter run -d windows
 ```
 
 **macOS:**
+
 ```bash
 flutter run -d macos
 ```
 
 **Linux:**
+
 ```bash
 flutter run -d linux
 ```
@@ -185,6 +203,7 @@ The project includes convenient batch files for Windows users:
 ## 🔧 Development
 
 ### Code Generation
+
 This project uses code generation for models. After making changes to `.dart` files with `@freezed` or `@JsonSerializable`, run:
 
 ```bash
@@ -192,6 +211,7 @@ flutter packages pub run build_runner build --delete-conflicting-outputs
 ```
 
 ### Linting
+
 The project uses Flutter Lints for code quality:
 
 ```bash
@@ -199,6 +219,7 @@ flutter analyze
 ```
 
 ### Testing
+
 Run tests with:
 
 ```bash
@@ -206,7 +227,9 @@ flutter test
 ```
 
 ### Hot Reload
+
 When running the app, you can use these commands:
+
 - **`r`** - Hot reload (apply changes without restarting)
 - **`R`** - Hot restart (restart the app)
 - **`q`** - Quit the app
@@ -214,6 +237,7 @@ When running the app, you can use these commands:
 ### Troubleshooting
 
 **Port 3000 already in use:**
+
 ```bash
 # Kill processes using port 3000 (Windows)
 netstat -ano | findstr :3000
@@ -224,6 +248,7 @@ start_flutter_clean.bat
 ```
 
 **Code generation errors:**
+
 ```bash
 # Clean and regenerate code
 flutter clean
@@ -232,6 +257,7 @@ flutter packages pub run build_runner build --delete-conflicting-outputs
 ```
 
 **Flutter doctor issues:**
+
 ```bash
 # Check Flutter setup
 flutter doctor
@@ -241,6 +267,7 @@ flutter doctor --android-licenses
 ```
 
 **Web-specific issues:**
+
 - If images fail to load, check your internet connection (placeholder images are loaded from external sources)
 - For CORS issues, ensure you're running from localhost
 - Clear browser cache if you encounter caching issues

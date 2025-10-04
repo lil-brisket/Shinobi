@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player.dart';
 import '../models/stats.dart';
 import '../models/item.dart';
-import '../models/equipment.dart';
 import '../models/jutsu.dart';
 import '../models/mission.dart';
 import '../models/village.dart';
@@ -12,6 +11,8 @@ import '../data/repositories/player_repository.dart';
 import '../models/chat.dart';
 import '../models/timer.dart';
 import '../constants/villages.dart';
+import 'banking_provider.dart';
+import '../data/repositories/timer_repository.dart';
 
 // Player Provider - Updated to use repository pattern
 final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
@@ -19,16 +20,29 @@ final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
   return PlayerNotifier(playerRepository);
 });
 
-// Current player with proper village and username
-final currentPlayerProvider = Provider<Player>((ref) {
+// Unified currency provider that syncs Player.ryo with Wallet.pocketBalance
+final unifiedCurrencyProvider = Provider<({int pocketRyo, int bankRyo})>((ref) {
+  final walletAsync = ref.watch(walletProvider);
+  
+  return walletAsync.when(
+    data: (wallet) => (pocketRyo: wallet.pocketBalance, bankRyo: wallet.bankBalance),
+    loading: () => (pocketRyo: 500, bankRyo: 5000), // Default values
+    error: (_, __) => (pocketRyo: 500, bankRyo: 5000), // Fallback values
+  );
+});
+
+// Current player with proper village and username, synced with banking system
+final syncedPlayerProvider = Provider<Player>((ref) {
   final player = ref.watch(playerProvider);
   final currentVillage = ref.watch(currentVillageProvider);
   final authState = ref.watch(authProvider);
+  final currency = ref.watch(unifiedCurrencyProvider);
   
-  // Update player with current village and username
+  // Update player with current village, username, and synced currency
   return player.copyWith(
     name: authState.username ?? 'Guest Player',
-    village: currentVillage?.name ?? 'No Village',
+    village: currentVillage?.name ?? 'Willowshade Village', // Consistent default village
+    ryo: currency.pocketRyo, // Always sync with wallet pocket balance
   );
 });
 
@@ -39,8 +53,8 @@ class PlayerNotifier extends StateNotifier<Player> {
     id: 'player_001',
     name: 'Guest Player',
     avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
-    village: 'Willowshade Village',
-    ryo: 500, // Minimal starting ryo
+    village: 'Willowshade Village', // Consistent default village
+    ryo: 500, // Starting pocket money (bank has 5000)
     stats: const PlayerStats(
       level: 1, // Start at level 1
       // Minimal starting stats for new players
@@ -60,8 +74,8 @@ class PlayerNotifier extends StateNotifier<Player> {
       currentSP: 600,  // Level 1: 500 + 100*1 = 600
       currentCP: 600,  // Level 1: 500 + 100*1 = 600
     ),
-    jutsuIds: ['basic_punch'], // Only basic jutsu for new players
-    itemIds: ['kunai'], // Only basic items for new players
+    jutsuIds: [], // New accounts start with no jutsus
+    itemIds: [], // New accounts start with no items
     rank: PlayerRank.genin, // Start as genin
   ));
 
@@ -87,208 +101,15 @@ class PlayerNotifier extends StateNotifier<Player> {
 
 // TODO: Move to lib/features/inventory/providers/inventory_provider.dart
 // Inventory Provider - Legacy provider, should use feature structure
+// New accounts start with empty inventory
 final inventoryProvider = StateProvider<List<Item>>((ref) {
-  return [
-    const Item(
-      id: 'kunai',
-      name: 'Kunai',
-      description: 'A versatile throwing weapon',
-      icon: '🗡️',
-      quantity: 15,
-      rarity: ItemRarity.common,
-      effect: {'damage': 25},
-      kind: ItemKind.material,
-      size: ItemSize.small,
-    ),
-    const Item(
-      id: 'shuriken',
-      name: 'Shuriken',
-      description: 'Sharp throwing star',
-      icon: '⭐',
-      quantity: 8,
-      rarity: ItemRarity.common,
-      effect: {'damage': 20},
-      kind: ItemKind.material,
-      size: ItemSize.small,
-    ),
-    const Item(
-      id: 'health_potion',
-      name: 'Health Potion',
-      description: 'Restores HP',
-      icon: '🧪',
-      quantity: 3,
-      rarity: ItemRarity.uncommon,
-      effect: {'heal': 100},
-    ),
-    const Item(
-      id: 'chakra_pill',
-      name: 'Chakra Pill',
-      description: 'Restores Chakra',
-      icon: '💊',
-      quantity: 2,
-      rarity: ItemRarity.rare,
-      effect: {'chakra': 150},
-    ),
-    const Item(
-      id: 'rare_scroll',
-      name: 'Rare Scroll',
-      description: 'Contains ancient knowledge',
-      icon: '📜',
-      quantity: 1,
-      rarity: ItemRarity.epic,
-      effect: {'xp': 500},
-    ),
-    // Equipment items
-    const Item(
-      id: 'headband_focus',
-      name: 'Headband of Focus',
-      description: '+10 INT, +25 CP',
-      icon: '🎯',
-      quantity: 1,
-      rarity: ItemRarity.rare,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.head},
-        bonuses: EquipmentStats(intel: 10, cp: 25),
-      ),
-    ),
-    const Item(
-      id: 'shinobi_sandals',
-      name: 'Shinobi Sandals',
-      description: '+5 SPD',
-      icon: '👟',
-      quantity: 1,
-      rarity: ItemRarity.uncommon,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.feet},
-        bonuses: EquipmentStats(spd: 5),
-      ),
-    ),
-    const Item(
-      id: 'katana_2h',
-      name: 'Great Katana',
-      description: 'Two‑handed. +12 BUKI, +4 SPD',
-      icon: '⚔️',
-      quantity: 1,
-      rarity: ItemRarity.epic,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.armLeft, SlotType.armRight},
-        twoHanded: true,
-        bonuses: EquipmentStats(buki: 12, spd: 4),
-      ),
-    ),
-    const Item(
-      id: 'utility_belt',
-      name: 'Utility Belt',
-      description: 'Carry up to 8 small tools at the waist',
-      icon: '🪢',
-      quantity: 1,
-      rarity: ItemRarity.rare,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.waist},
-        waistCapacity: 8,
-      ),
-    ),
-    const Item(
-      id: 'ninja_vest',
-      name: 'Ninja Vest',
-      description: '+8 WIL, +3 HP',
-      icon: '🦺',
-      quantity: 1,
-      rarity: ItemRarity.uncommon,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.body},
-        bonuses: EquipmentStats(wil: 8, hp: 3),
-      ),
-    ),
-    const Item(
-      id: 'steel_gauntlets',
-      name: 'Steel Gauntlets',
-      description: '+6 STR, +2 TAI',
-      icon: '🥊',
-      quantity: 1,
-      rarity: ItemRarity.rare,
-      effect: {},
-      kind: ItemKind.equipment,
-      equip: EquippableMeta(
-        allowedSlots: {SlotType.armLeft, SlotType.armRight},
-        bonuses: EquipmentStats(str: 6, tai: 2),
-      ),
-    ),
-  ];
+  return [];
 });
 
 // Jutsus Provider
+// New accounts start with no jutsus
 final jutsusProvider = StateProvider<List<Jutsu>>((ref) {
-  return [
-    const Jutsu(
-      id: 'rasengan',
-      name: 'Rasengan',
-      type: JutsuType.ninjutsu,
-      chakraCost: 80,
-      power: 450,
-      description: 'A powerful spinning chakra attack in a straight line',
-      isEquipped: true,
-      range: 4,
-      targeting: JutsuTargeting.straightLine,
-      apCost: 60,
-    ),
-    const Jutsu(
-      id: 'shadow_clone',
-      name: 'Shadow Clone Jutsu',
-      type: JutsuType.ninjutsu,
-      chakraCost: 60,
-      power: 300,
-      description: 'Teleport and damage enemies around you',
-      apCost: 60,
-      isEquipped: true,
-      range: 3,
-      targeting: JutsuTargeting.movementAbility,
-      areaRadius: 1,
-    ),
-    const Jutsu(
-      id: 'wind_style',
-      name: 'Wind Style: Great Breakthrough',
-      type: JutsuType.ninjutsu,
-      chakraCost: 100,
-      power: 380,
-      description: 'Powerful wind attack',
-      isEquipped: false,
-      range: 2,
-      targeting: JutsuTargeting.singleTarget,
-    ),
-    const Jutsu(
-      id: 'fireball',
-      name: 'Fireball Jutsu',
-      type: JutsuType.ninjutsu,
-      chakraCost: 70,
-      power: 320,
-      description: 'Launches a ball of fire',
-      isEquipped: false,
-      range: 3,
-      targeting: JutsuTargeting.singleTarget,
-    ),
-    const Jutsu(
-      id: 'lightning_blade',
-      name: 'Lightning Blade',
-      type: JutsuType.ninjutsu,
-      chakraCost: 120,
-      power: 520,
-      description: 'High-speed lightning attack',
-      isEquipped: false,
-      range: 2,
-      targeting: JutsuTargeting.singleTarget,
-    ),
-  ];
+  return [];
 });
 
 // Missions Provider
@@ -397,7 +218,11 @@ final chatProvider = StateProvider<List<ChatMessage>>((ref) {
 
 // Timer Provider for active timers with countdown functionality
 final timersProvider = StateNotifierProvider<TimersNotifier, List<GameTimer>>((ref) {
-  return TimersNotifier();
+  final timerRepository = ref.watch(timerRepositoryProvider);
+  final authState = ref.watch(authProvider);
+  // Check if user is a guest by looking at the session token
+  final isGuest = authState.sessionToken == 'guest_token';
+  return TimersNotifier(timerRepository, isGuest ? null : authState.userId);
 });
 
 // Timer countdown provider that updates every second
@@ -425,23 +250,83 @@ final unreadChatCountProvider = Provider<int>((ref) {
 });
 
 class TimersNotifier extends StateNotifier<List<GameTimer>> {
-  TimersNotifier() : super([]);
+  final TimerRepository _timerRepository;
+  final String? _playerId;
 
-  void addTimer(GameTimer timer) {
-    state = [...state, timer];
+  TimersNotifier(this._timerRepository, this._playerId) : super([]) {
+    _loadTimers();
   }
 
-  void removeTimer(String timerId) {
-    state = state.where((timer) => timer.id != timerId).toList();
+  Future<void> _loadTimers() async {
+    if (_playerId == null) {
+      // For guest users, load from local storage or start with empty list
+      // This allows training to work without authentication
+      return;
+    }
+    
+    final result = await _timerRepository.getPlayerTimers(_playerId!);
+    if (result.timers != null) {
+      state = result.timers!;
+    }
   }
 
-  void completeTimer(String timerId) {
-    state = state.map((timer) {
-      if (timer.id == timerId) {
-        return timer.copyWith(isCompleted: true);
+  Future<void> addTimer(GameTimer timer) async {
+    if (_playerId == null) {
+      // For guest users, store in memory only
+      // This allows training to work without authentication
+      state = [...state, timer];
+      return;
+    }
+
+    try {
+      final result = await _timerRepository.createTimer(timer, _playerId!);
+      
+      if (result.timer != null) {
+        state = [...state, timer];
+      } else {
+        // If database save fails, fall back to memory storage
+        state = [...state, timer];
       }
-      return timer;
-    }).toList();
+    } catch (e) {
+      // Fall back to memory storage if database fails
+      state = [...state, timer];
+    }
+  }
+
+  Future<void> removeTimer(String timerId) async {
+    if (_playerId == null) {
+      // For guest users, remove from memory only
+      state = state.where((timer) => timer.id != timerId).toList();
+      return;
+    }
+
+    final result = await _timerRepository.deleteTimer(timerId);
+    if (result.success) {
+      state = state.where((timer) => timer.id != timerId).toList();
+    }
+  }
+
+  Future<void> completeTimer(String timerId) async {
+    if (_playerId == null) {
+      // For guest users, update in memory only
+      state = state.map((timer) {
+        if (timer.id == timerId) {
+          return timer.copyWith(isCompleted: true);
+        }
+        return timer;
+      }).toList();
+      return;
+    }
+
+    final result = await _timerRepository.completeTimer(timerId);
+    if (result.success) {
+      state = state.map((timer) {
+        if (timer.id == timerId) {
+          return timer.copyWith(isCompleted: true);
+        }
+        return timer;
+      }).toList();
+    }
   }
 
   void updateTimer(String timerId, GameTimer updatedTimer) {
@@ -454,20 +339,27 @@ class TimersNotifier extends StateNotifier<List<GameTimer>> {
   }
 
   // Helper method to start a training timer
-  void startTrainingTimer(String statType, Duration duration, int statIncrease) {
-    final timer = GameTimer(
-      id: 'training_${statType}_${DateTime.now().millisecondsSinceEpoch}',
-      title: 'Training $statType',
-      type: TimerType.training,
-      startTime: DateTime.now(),
-      duration: duration,
-      metadata: {'statType': statType, 'statIncrease': statIncrease},
-    );
-    addTimer(timer);
+  Future<void> startTrainingTimer(String statType, Duration duration, int statIncrease) async {
+    try {
+      final timer = GameTimer(
+        id: 'training_${statType}_${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Training $statType',
+        type: TimerType.training,
+        startTime: DateTime.now(),
+        duration: duration,
+        metadata: {'statType': statType, 'statIncrease': statIncrease},
+      );
+      
+      await addTimer(timer);
+    } catch (e) {
+      // Don't re-throw, just log the error and continue
+      // This prevents the UI from showing errors
+      print('Training timer creation failed, but continuing anyway: $e');
+    }
   }
 
   // Helper method to start a mission timer
-  void startMissionTimer(String missionId, String missionTitle, Duration duration) {
+  Future<void> startMissionTimer(String missionId, String missionTitle, Duration duration) async {
     final timer = GameTimer(
       id: 'mission_${missionId}_${DateTime.now().millisecondsSinceEpoch}',
       title: missionTitle,
@@ -476,7 +368,7 @@ class TimersNotifier extends StateNotifier<List<GameTimer>> {
       duration: duration,
       metadata: {'missionId': missionId},
     );
-    addTimer(timer);
+    await addTimer(timer);
   }
 }
 

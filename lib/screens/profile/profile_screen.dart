@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    final player = ref.watch(playerProvider);
+    final player = ref.watch(syncedPlayerProvider);
     final authState = ref.watch(authProvider);
     
     return Scaffold(
@@ -428,7 +428,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 
   void _showEditProfile(BuildContext context, WidgetRef ref) {
-    final player = ref.read(playerProvider);
+    final player = ref.read(syncedPlayerProvider);
     final nameController = TextEditingController(text: player.name);
 
     showDialog(
@@ -526,7 +526,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Navigator.pop(context);
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
-                context.go('/start');
+                context.go('/home');
               }
             },
             child: const Text(
