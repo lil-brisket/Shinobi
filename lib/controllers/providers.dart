@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:convert';
 import '../models/player.dart';
 import '../models/stats.dart';
 import '../models/item.dart';
@@ -52,7 +56,7 @@ class PlayerNotifier extends StateNotifier<Player> {
   PlayerNotifier(this._playerRepository) : super(Player(
     id: 'player_001',
     name: 'Guest Player',
-    avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
+    avatarUrl: 'https://ui-avatars.com/api/?name=G&background=FF6B35&color=FFFFFF&size=100',
     village: 'Willowshade Village', // Consistent default village
     ryo: 500, // Starting pocket money (bank has 5000)
     stats: const PlayerStats(
@@ -80,17 +84,20 @@ class PlayerNotifier extends StateNotifier<Player> {
   ));
 
   Future<void> updateStats(PlayerStats newStats) async {
+    // Always update local state first for immediate UI feedback
+    state = state.copyWith(stats: newStats);
+    
     try {
-      // Update stats via repository
+      // Try to update stats via repository for persistence
       final result = await _playerRepository.updatePlayerStats(state.id, newStats);
       
-      if (result.success) {
-        // Update local state
-        state = state.copyWith(stats: newStats);
+      if (!result.success) {
+        // Log error but don't revert local state
+        print('Failed to persist stats update: ${result.failure?.message}');
       }
-      // Handle failure if needed
     } catch (e) {
-      // Handle error
+      // Log error but don't revert local state
+      print('Error updating stats in repository: $e');
     }
   }
 
@@ -190,7 +197,7 @@ final chatProvider = StateProvider<List<ChatMessage>>((ref) {
       id: 'msg_001',
       senderId: 'player_002',
       senderName: 'Sasuke_Uchiha',
-      avatarUrl: 'https://via.placeholder.com/40x40/FF6B35/FFFFFF?text=S',
+      avatarUrl: 'https://ui-avatars.com/api/?name=S&background=FF6B35&color=FFFFFF&size=40',
       message: 'Anyone up for a training session?',
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
       type: ChatType.global,
@@ -199,7 +206,7 @@ final chatProvider = StateProvider<List<ChatMessage>>((ref) {
       id: 'msg_002',
       senderId: 'player_003',
       senderName: 'Sakura_Haruno',
-      avatarUrl: 'https://via.placeholder.com/40x40/FF6B35/FFFFFF?text=S',
+      avatarUrl: 'https://ui-avatars.com/api/?name=S&background=FF6B35&color=FFFFFF&size=40',
       message: 'I need help with the bandit mission!',
       timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
       type: ChatType.global,
@@ -208,7 +215,7 @@ final chatProvider = StateProvider<List<ChatMessage>>((ref) {
       id: 'msg_003',
       senderId: 'player_004',
       senderName: 'Kakashi_Hatake',
-      avatarUrl: 'https://via.placeholder.com/40x40/FF6B35/FFFFFF?text=K',
+      avatarUrl: 'https://ui-avatars.com/api/?name=K&background=FF6B35&color=FFFFFF&size=40',
       message: 'Great work on today\'s missions, team!',
       timestamp: DateTime.now().subtract(const Duration(hours: 1)),
       type: ChatType.clan,
@@ -222,13 +229,23 @@ final timersProvider = StateNotifierProvider<TimersNotifier, List<GameTimer>>((r
   final authState = ref.watch(authProvider);
   // Check if user is a guest by looking at the session token
   final isGuest = authState.sessionToken == 'guest_token';
-  return TimersNotifier(timerRepository, isGuest ? null : authState.userId);
+  final notifier = TimersNotifier(timerRepository, isGuest ? null : authState.userId);
+  
+  // Initialize timers when provider is first created
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    notifier._initializeTimers();
+  });
+  
+  return notifier;
 });
 
 // Timer countdown provider that updates every second
 final timerCountdownProvider = StreamProvider<List<GameTimer>>((ref) {
   return Stream.periodic(const Duration(seconds: 1), (_) {
-    return ref.read(timersProvider);
+    final timers = ref.read(timersProvider);
+    // Only return timers that are still active (not completed and not expired)
+    final activeTimers = timers.where((timer) => !timer.isCompleted && !timer.isFinished).toList();
+    return activeTimers;
   });
 });
 
@@ -253,102 +270,254 @@ class TimersNotifier extends StateNotifier<List<GameTimer>> {
   final TimerRepository _timerRepository;
   final String? _playerId;
 
-  TimersNotifier(this._timerRepository, this._playerId) : super([]) {
-    _loadTimers();
+  TimersNotifier(this._timerRepository, this._playerId) : super([]);
+
+  Future<void> _initializeTimers() async {
+    await _loadTimers();
   }
+
+  static const String _timersKey = 'persistent_timers';
 
   Future<void> _loadTimers() async {
     if (_playerId == null) {
-      // For guest users, load from local storage or start with empty list
-      // This allows training to work without authentication
+      // For guest users, only use local storage
+      await _loadTimersFromLocalStorage();
       return;
     }
     
+    // For authenticated users, prioritize database with local fallback
+    try {
+      await _loadTimersFromDatabase();
+      // If database load succeeds, sync to local storage as backup
+      await _saveTimersToLocalStorage();
+    } catch (e) {
+      print('Database load failed, falling back to local storage: $e');
+      // If database fails, fall back to local storage
+      await _loadTimersFromLocalStorage();
+    }
+  }
+
+  Future<void> _loadTimersFromLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timersJson = prefs.getString(_timersKey);
+      
+      if (timersJson != null) {
+        final List<dynamic> timersList = json.decode(timersJson);
+        final timers = timersList.map((json) => GameTimer.fromJson(json)).toList();
+        
+        // Filter out completed timers and expired timers
+        final activeTimers = timers.where((timer) {
+          if (timer.isCompleted) {
+            return false;
+          }
+          
+          // Check if timer has expired
+          final now = DateTime.now();
+          final endTime = timer.startTime.add(timer.duration);
+          if (now.isAfter(endTime)) {
+            return false;
+          }
+          
+          return true;
+        }).toList();
+        
+        state = activeTimers;
+      } else {
+        state = [];
+      }
+    } catch (e) {
+      print('[TimersNotifier] Error loading from local storage: $e');
+      // If loading from local storage fails, start with empty list
+      state = [];
+    }
+  }
+
+  Future<void> _loadTimersFromDatabase() async {
     final result = await _timerRepository.getPlayerTimers(_playerId!);
     if (result.timers != null) {
+      // Database is the source of truth for authenticated users
       state = result.timers!;
+    } else if (result.failure != null) {
+      throw Exception('Database error: ${result.failure!.message}');
+    }
+  }
+
+  Future<void> _saveTimersToLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timersJson = json.encode(state.map((timer) => timer.toJson()).toList());
+      await prefs.setString(_timersKey, timersJson);
+    } catch (e) {
+      print('[TimersNotifier] Failed to save timers to local storage: $e');
     }
   }
 
   Future<void> addTimer(GameTimer timer) async {
     if (_playerId == null) {
-      // For guest users, store in memory only
-      // This allows training to work without authentication
+      // For guest users, only use local storage
       state = [...state, timer];
+      await _saveTimersToLocalStorage();
       return;
     }
-
+    
+    // For authenticated users, database is primary, local storage is backup
     try {
       final result = await _timerRepository.createTimer(timer, _playerId!);
-      
       if (result.timer != null) {
-        state = [...state, timer];
+        // Database save succeeded, update state and backup to local storage
+        state = [...state, result.timer!];
+        await _saveTimersToLocalStorage();
       } else {
-        // If database save fails, fall back to memory storage
-        state = [...state, timer];
+        throw Exception('Failed to create timer in database: ${result.failure?.message}');
       }
     } catch (e) {
-      // Fall back to memory storage if database fails
+      // Database save failed, fall back to local storage
+      print('Database save failed, using local storage: $e');
       state = [...state, timer];
+      await _saveTimersToLocalStorage();
     }
   }
 
   Future<void> removeTimer(String timerId) async {
     if (_playerId == null) {
-      // For guest users, remove from memory only
+      // For guest users, only use local storage
       state = state.where((timer) => timer.id != timerId).toList();
+      await _saveTimersToLocalStorage();
       return;
     }
-
-    final result = await _timerRepository.deleteTimer(timerId);
-    if (result.success) {
+    
+    // For authenticated users, database is primary
+    try {
+      final result = await _timerRepository.deleteTimer(timerId);
+      if (result.success) {
+        // Database delete succeeded, update state and backup to local storage
+        state = state.where((timer) => timer.id != timerId).toList();
+        await _saveTimersToLocalStorage();
+      } else {
+        throw Exception('Failed to delete timer from database: ${result.failure?.message}');
+      }
+    } catch (e) {
+      // Database delete failed, still remove from local state and storage
+      print('Database delete failed, removing from local storage: $e');
       state = state.where((timer) => timer.id != timerId).toList();
+      await _saveTimersToLocalStorage();
     }
   }
 
   Future<void> completeTimer(String timerId) async {
     if (_playerId == null) {
-      // For guest users, update in memory only
+      // For guest users, only use local storage
       state = state.map((timer) {
         if (timer.id == timerId) {
           return timer.copyWith(isCompleted: true);
         }
         return timer;
       }).toList();
+      await _saveTimersToLocalStorage();
       return;
     }
-
-    final result = await _timerRepository.completeTimer(timerId);
-    if (result.success) {
+    
+    // For authenticated users, database is primary
+    try {
+      final result = await _timerRepository.completeTimer(timerId);
+      if (result.success) {
+        // Database update succeeded, update state and backup to local storage
+        state = state.map((timer) {
+          if (timer.id == timerId) {
+            return timer.copyWith(isCompleted: true);
+          }
+          return timer;
+        }).toList();
+        await _saveTimersToLocalStorage();
+      } else {
+        throw Exception('Failed to complete timer in database: ${result.failure?.message}');
+      }
+    } catch (e) {
+      // Database update failed, still update local state and storage
+      print('Database update failed, updating local storage: $e');
       state = state.map((timer) {
         if (timer.id == timerId) {
           return timer.copyWith(isCompleted: true);
         }
         return timer;
       }).toList();
+      await _saveTimersToLocalStorage();
     }
   }
 
-  void updateTimer(String timerId, GameTimer updatedTimer) {
-    state = state.map((timer) {
-      if (timer.id == timerId) {
-        return updatedTimer;
+  Future<void> updateTimer(String timerId, GameTimer updatedTimer) async {
+    if (_playerId == null) {
+      // For guest users, only use local storage
+      state = state.map((timer) {
+        if (timer.id == timerId) {
+          return updatedTimer;
+        }
+        return timer;
+      }).toList();
+      await _saveTimersToLocalStorage();
+      return;
+    }
+    
+    // For authenticated users, database is primary
+    try {
+      final result = await _timerRepository.updateTimer(updatedTimer, _playerId!);
+      if (result.timer != null) {
+        // Database update succeeded, update state and backup to local storage
+        state = state.map((timer) {
+          if (timer.id == timerId) {
+            return result.timer!;
+          }
+          return timer;
+        }).toList();
+        await _saveTimersToLocalStorage();
+      } else {
+        throw Exception('Failed to update timer in database: ${result.failure?.message}');
       }
-      return timer;
-    }).toList();
+    } catch (e) {
+      // Database update failed, still update local state and storage
+      print('Database update failed, updating local storage: $e');
+      state = state.map((timer) {
+        if (timer.id == timerId) {
+          return updatedTimer;
+        }
+        return timer;
+      }).toList();
+      await _saveTimersToLocalStorage();
+    }
+  }
+
+  // Method to sync local storage with database (useful for connectivity recovery)
+  Future<void> syncWithDatabase() async {
+    if (_playerId == null) return; // Only for authenticated users
+    
+    try {
+      // Load from database (source of truth)
+      await _loadTimersFromDatabase();
+      // Update local storage backup
+      await _saveTimersToLocalStorage();
+    } catch (e) {
+      print('Failed to sync with database: $e');
+    }
   }
 
   // Helper method to start a training timer
   Future<void> startTrainingTimer(String statType, Duration duration, int statIncrease) async {
     try {
+      // Generate a proper UUID for the timer
+      const uuid = Uuid();
+      final timerId = uuid.v4();
+      
+      final startTime = DateTime.now().toLocal();
       final timer = GameTimer(
-        id: 'training_${statType}_${DateTime.now().millisecondsSinceEpoch}',
+        id: timerId,
         title: 'Training $statType',
         type: TimerType.training,
-        startTime: DateTime.now(),
+        startTime: startTime,
         duration: duration,
         metadata: {'statType': statType, 'statIncrease': statIncrease},
       );
+      
       
       await addTimer(timer);
     } catch (e) {
@@ -392,7 +561,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
     Player(
       id: 'player_002',
       name: 'Sasuke_Uchiha',
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
+      avatarUrl: 'https://ui-avatars.com/api/?name=S&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village',
       ryo: 12000,
       stats: const PlayerStats(
@@ -416,7 +585,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
     Player(
       id: 'player_003',
       name: 'Sakura_Haruno',
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=S',
+      avatarUrl: 'https://ui-avatars.com/api/?name=S&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village',
       ryo: 8000,
       stats: const PlayerStats(
@@ -440,7 +609,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
     Player(
       id: 'player_004',
       name: 'Kakashi_Hatake',
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=K',
+      avatarUrl: 'https://ui-avatars.com/api/?name=K&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village',
       ryo: 25000,
       stats: const PlayerStats(
@@ -464,7 +633,7 @@ final otherPlayersProvider = StateProvider<List<Player>>((ref) {
     Player(
       id: 'player_005',
       name: 'Hinata_Hyuga',
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=H',
+      avatarUrl: 'https://ui-avatars.com/api/?name=H&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village',
       ryo: 10000,
       stats: const PlayerStats(

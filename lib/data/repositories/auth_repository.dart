@@ -45,7 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
         final player = Player(
           id: userId,
           name: username,
-          avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
+          avatarUrl: 'https://ui-avatars.com/api/?name=${username[0].toUpperCase()}&background=FF6B35&color=FFFFFF&size=100',
           village: 'Willowshade Village', // Default village
           ryo: 500, // Minimal starting ryo
           stats: const PlayerStats(
@@ -97,7 +97,7 @@ class AuthRepositoryImpl implements AuthRepository {
         final player = Player(
           id: userId,
           name: username,
-          avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
+          avatarUrl: 'https://ui-avatars.com/api/?name=${username[0].toUpperCase()}&background=FF6B35&color=FFFFFF&size=100',
           village: 'Willowshade Village', // Default village
           ryo: 500, // Minimal starting ryo for new players
           stats: const PlayerStats(
@@ -153,7 +153,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final player = Player(
         id: guestId,
         name: 'Guest Player',
-        avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
+        avatarUrl: 'https://ui-avatars.com/api/?name=G&background=FF6B35&color=FFFFFF&size=100',
         village: 'Willowshade Village',
         ryo: 5000, // Limited ryo for guests
         stats: const PlayerStats(
@@ -202,7 +202,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return Player(
           id: userId,
           name: username,
-          avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
+          avatarUrl: 'https://ui-avatars.com/api/?name=${username[0].toUpperCase()}&background=FF6B35&color=FFFFFF&size=100',
           village: 'Willowshade Village',
           ryo: 500, // Minimal starting ryo
           stats: const PlayerStats(

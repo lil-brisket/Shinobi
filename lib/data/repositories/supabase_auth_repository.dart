@@ -140,7 +140,7 @@ class SupabaseAuthRepository implements AuthRepository {
     return player_model.Player(
       id: userId,
       name: username,
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
+      avatarUrl: 'https://ui-avatars.com/api/?name=${username[0].toUpperCase()}&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village', // Will be updated from database
       ryo: 500, // Starting ryo for new players (pocket money)
       stats: const PlayerStats(
@@ -172,7 +172,7 @@ class SupabaseAuthRepository implements AuthRepository {
     return player_model.Player(
       id: guestId,
       name: 'Guest Player',
-      avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
+      avatarUrl: 'https://ui-avatars.com/api/?name=G&background=FF6B35&color=FFFFFF&size=100',
       village: 'Willowshade Village',
       ryo: 5000, // Limited ryo for guests
       stats: const PlayerStats(

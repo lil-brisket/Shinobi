@@ -500,43 +500,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
-        title: const Text(
-          'Logout',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white70),
-            ),
+  void _handleLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      // Perform logout without loading dialog to avoid navigation conflicts
+      await ref.read(authProvider.notifier).logout();
+      
+      // Navigate to start screen immediately after logout
+      if (context.mounted) {
+        context.go('/start');
+      }
+    } catch (e) {
+      // Show error message if logout fails
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await ref.read(authProvider.notifier).logout();
-              if (context.mounted) {
-                context.go('/home');
-              }
-            },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 
   void _showAbout(BuildContext context) {

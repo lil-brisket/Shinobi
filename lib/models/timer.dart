@@ -34,11 +34,20 @@ class GameTimer with _$GameTimer {
   Duration get remainingTime {
     if (isCompleted) return Duration.zero;
     
-    final elapsed = DateTime.now().difference(startTime);
+    final now = DateTime.now().toLocal();
+    final localStartTime = startTime.toLocal();
+    final elapsed = now.difference(localStartTime);
     final remaining = duration - elapsed;
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
   // Helper getter to check if timer is finished
-  bool get isFinished => remainingTime == Duration.zero && !isCompleted;
+  bool get isFinished {
+    if (isCompleted) return false;
+    
+    final now = DateTime.now().toLocal();
+    final localStartTime = startTime.toLocal();
+    final elapsed = now.difference(localStartTime);
+    return elapsed >= duration;
+  }
 }

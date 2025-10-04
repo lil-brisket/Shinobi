@@ -37,6 +37,7 @@ class TimerRepositoryImpl implements TimerRepository {
   Future<({GameTimer? timer, Failure? failure})> createTimer(GameTimer timer, String playerId) async {
     try {
       final json = _mapTimerToJson(timer, playerId);
+      
       final response = await _supabaseService.client
           .from('timers')
           .insert(json)
@@ -44,6 +45,7 @@ class TimerRepositoryImpl implements TimerRepository {
           .single();
 
       final createdTimer = _mapTimerFromJson(response);
+      
       return (timer: createdTimer, failure: null);
     } catch (e) {
       return (timer: null, failure: ServerFailure('Failed to create timer: $e'));
@@ -101,7 +103,7 @@ class TimerRepositoryImpl implements TimerRepository {
       id: json['id'],
       title: json['title'] ?? 'Unknown Timer',
       type: _mapTimerTypeFromString(json['timer_type']),
-      startTime: DateTime.parse(json['started_at']),
+      startTime: DateTime.parse(json['started_at']).toLocal(),
       duration: Duration(seconds: json['duration']),
       isCompleted: !json['is_active'],
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
@@ -115,8 +117,8 @@ class TimerRepositoryImpl implements TimerRepository {
       'timer_type': _mapTimerTypeToString(timer.type),
       'title': timer.title,
       'duration': timer.duration.inSeconds,
-      'started_at': timer.startTime.toIso8601String(),
-      'expires_at': timer.startTime.add(timer.duration).toIso8601String(),
+      'started_at': timer.startTime.toUtc().toIso8601String(),
+      'expires_at': timer.startTime.add(timer.duration).toUtc().toIso8601String(),
       'is_active': !timer.isCompleted,
       'metadata': timer.metadata ?? {},
     };

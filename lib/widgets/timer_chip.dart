@@ -18,32 +18,7 @@ class TimerChip extends StatefulWidget {
 }
 
 class _TimerChipState extends State<TimerChip> {
-  late Duration _remaining;
-  late bool _isCompleted;
-
-  @override
-  void initState() {
-    super.initState();
-    _remaining = widget.remaining;
-    _isCompleted = _remaining.inSeconds <= 0;
-    if (!_isCompleted) {
-      _startTimer();
-    }
-  }
-
-  void _startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _remaining = _remaining - const Duration(seconds: 1);
-          _isCompleted = _remaining.inSeconds <= 0;
-        });
-        if (!_isCompleted) {
-          _startTimer();
-        }
-      }
-    });
-  }
+  bool get _isCompleted => widget.remaining.inSeconds <= 0;
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
@@ -81,7 +56,7 @@ class _TimerChipState extends State<TimerChip> {
           ),
           const SizedBox(width: 8),
           Text(
-            _isCompleted ? 'Ready!' : _formatDuration(_remaining),
+            _isCompleted ? 'Ready!' : _formatDuration(widget.remaining),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: _isCompleted ? Colors.white : AppTheme.accentColor,
               fontWeight: FontWeight.w600,

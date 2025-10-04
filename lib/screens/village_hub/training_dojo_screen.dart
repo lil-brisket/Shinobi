@@ -20,7 +20,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final player = ref.watch(playerProvider);
+    final player = ref.watch(syncedPlayerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -280,22 +280,33 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     Color color,
     String statType,
   ) {
-    final timers = ref.watch(timersProvider);
+    return Consumer(
+      builder: (context, ref, child) {
+        // Use the main timers provider for all timer states (active, finished, completed)
+        final timers = ref.watch(timersProvider);
+        
+        // Watch countdown provider for UI updates but don't use it for timer filtering
+        ref.watch(timerCountdownProvider);
+        
+        // Use main timers provider which includes all timer states
+        final activeTimers = timers;
     
-    // Check if this specific training is active
-    final trainingTimer = timers.where((timer) => 
+    // Check if this specific training is active (including finished but not completed)
+    final trainingTimer = activeTimers.where((timer) => 
         timer.type == TimerType.training && 
         timer.metadata?['statType'] == statType &&
         !timer.isCompleted
     ).firstOrNull;
     
-    // Check if ANY training is currently active
-    final anyTrainingActive = timers.any((timer) => 
+    // Check if ANY training is currently active (including finished but not completed)
+    final anyTrainingActive = activeTimers.any((timer) => 
         timer.type == TimerType.training && !timer.isCompleted);
     
     final isTraining = trainingTimer != null;
     final remaining = trainingTimer?.remainingTime ?? Duration.zero;
+    final isTrainingCompleted = isTraining && trainingTimer!.isFinished;
     final canStartTraining = !isTraining && !anyTrainingActive;
+    
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -369,16 +380,19 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
                       label: title,
                       onCollect: () => _collectTraining(trainingTimer.id, statType),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => _cancelTraining(trainingTimer.id, statType),
-                      icon: const Icon(Icons.cancel, color: Colors.red),
-                      tooltip: 'Cancel Training',
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.red.withValues(alpha: 0.1),
-                        foregroundColor: Colors.red,
+                    // Only show cancel button if training is not completed
+                    if (!isTrainingCompleted) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => _cancelTraining(trainingTimer.id, statType),
+                        icon: const Icon(Icons.cancel, color: Colors.red),
+                        tooltip: 'Cancel Training',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.red.withValues(alpha: 0.1),
+                          foregroundColor: Colors.red,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -406,6 +420,8 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
         ],
       ),
     );
+      },
+    );
   }
 
   void _startTraining(String statType, Duration duration) async {
@@ -429,9 +445,12 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
         final minutes = duration.inMinutes % 60;
         String durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
+        // Force a rebuild to update the UI
+        setState(() {});
+
         SnackbarUtils.showSuccess(
           context,
-          'Started $statType training for $durationText! Only one training session allowed at a time.',
+          'Started $statType training for $durationText!',
           backgroundColor: AppTheme.accentColor,
         );
       } else {
@@ -470,7 +489,9 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     final timer = timers.firstWhere((t) => t.id == timerId);
     
     // Calculate completion percentage and potential gains
-    final elapsed = DateTime.now().difference(timer.startTime);
+    final now = DateTime.now().toLocal();
+    final localStartTime = timer.startTime.toLocal();
+    final elapsed = now.difference(localStartTime);
     final totalDuration = timer.duration;
     final completionPercentage = (elapsed.inSeconds / totalDuration.inSeconds * 100).clamp(0, 100);
     
@@ -576,7 +597,7 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     
     if (partialStatIncrease > 0) {
       // Apply direct stat increases
-      final player = ref.read(playerProvider);
+      final player = ref.read(syncedPlayerProvider);
       PlayerStats newStats = player.stats;
       
       // Apply direct stat increases based on stat type
@@ -640,13 +661,18 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
   }
 
   Widget _buildTrainingProgress(GameTimer timer) {
-    final elapsed = DateTime.now().difference(timer.startTime);
+    final now = DateTime.now().toLocal();
+    final localStartTime = timer.startTime.toLocal();
+    final elapsed = now.difference(localStartTime);
     final totalDuration = timer.duration;
     final completionPercentage = (elapsed.inSeconds / totalDuration.inSeconds * 100).clamp(0, 100);
     
+    
     // Determine progress color based on thresholds
     Color progressColor = Colors.grey;
-    if (completionPercentage >= 75) {
+    if (completionPercentage >= 100) {
+      progressColor = Colors.green;
+    } else if (completionPercentage >= 75) {
       progressColor = Colors.green;
     } else if (completionPercentage >= 50) {
       progressColor = Colors.blue;
@@ -712,7 +738,9 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
   }
 
   String _getProgressMessage(double percentage) {
-    if (percentage >= 75) {
+    if (percentage >= 100) {
+      return 'Training completed - Ready to collect!';
+    } else if (percentage >= 75) {
       return '75% threshold reached - Cancel for 75% gains';
     } else if (percentage >= 50) {
       return '50% threshold reached - Cancel for 50% gains';
@@ -797,16 +825,12 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
     await ref.read(timersProvider.notifier).completeTimer(timerId);
 
     // Update player stats using direct stat increases
-    final player = ref.read(playerProvider);
+    final player = ref.read(syncedPlayerProvider);
     PlayerStats newStats = player.stats;
     
     // Get stat increase from metadata
     int statIncrease = timer.metadata?['statIncrease'] ?? 2; // Default fallback
     
-    // Debug: Print current stats before training
-    print('Before training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
-    print('Base stats - STR: ${newStats.str}, WIL: ${newStats.wil}, INTL: ${newStats.intl}, SPD: ${newStats.spd}');
-    print('Training stat increase: $statIncrease');
     
     // Apply direct stat increases based on stat type
     switch (statType) {
@@ -852,9 +876,6 @@ class _TrainingDojoScreenState extends ConsumerState<TrainingDojoScreen> {
         break;
     }
     
-    // Debug: Print stats after training
-    print('After training - Attack: ${newStats.attack}, Defense: ${newStats.defense}, Chakra: ${newStats.chakra}, Stamina: ${newStats.stamina}');
-    print('Base stats - STR: ${newStats.str}, WIL: ${newStats.wil}, INTL: ${newStats.intl}, SPD: ${newStats.spd}');
     
     ref.read(playerProvider.notifier).updateStats(newStats);
 

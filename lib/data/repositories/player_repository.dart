@@ -27,7 +27,7 @@ class PlayerRepositoryImpl implements PlayerRepository {
       final player = Player(
         id: playerId,
         name: 'Guest Player',
-        avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
+        avatarUrl: 'https://ui-avatars.com/api/?name=G&background=FF6B35&color=FFFFFF&size=100',
         village: 'Willowshade Village',
         ryo: 500, // Minimal starting ryo
         stats: const PlayerStats(

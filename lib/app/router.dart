@@ -22,7 +22,6 @@ import '../screens/map/map_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/main_shell.dart';
 import '../features/auth/providers/auth_provider.dart';
-import '../debug_timer_test.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -78,11 +77,6 @@ class AppRouter {
         path: '/register',
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
-      ),
-      GoRoute(
-        path: '/debug-timers',
-        name: 'debug-timers',
-        builder: (context, state) => const DebugTimerTest(),
       ),
       
       // Protected Game Routes (inside shell)
