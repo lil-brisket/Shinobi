@@ -37,34 +37,32 @@ class PlayerNotifier extends StateNotifier<Player> {
   
   PlayerNotifier(this._playerRepository) : super(Player(
     id: 'player_001',
-    name: 'Naruto_Uzumaki',
-    avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=N',
+    name: 'Guest Player',
+    avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
     village: 'Willowshade Village',
-    ryo: 15000,
+    ryo: 500, // Minimal starting ryo
     stats: const PlayerStats(
-      level: 25,
-      // Stimulated data with proper tier distribution
-      // Base stats (cap: 250k each) - showing various tiers
-      str: 75000,    // 30% of 250k = Tier 3
-      intl: 125000,  // 50% of 250k = Tier 3  
-      spd: 200000,   // 80% of 250k = Tier 4
-      wil: 50000,    // 20% of 250k = Tier 2
+      level: 1, // Start at level 1
+      // Minimal starting stats for new players
+      str: 100,    // Minimal starting stats
+      intl: 100,
+      spd: 100,
+      wil: 100,
       
-      // Combat stats (cap: 500k each) - showing offense priorities
-      nin: 300000,   // 60% of 500k (main offense) = Tier 3
-      gen: 125000,   // 50% of 250k (secondary offense) = Tier 3
-      buk: 90000,    // 60% of 150k (tertiary offense) = Tier 3
-      tai: 20000,    // 40% of 50k (quaternary offense) = Tier 2
+      // Combat stats - minimal starting values
+      nin: 100,
+      gen: 100,
+      buk: 100,
+      tai: 100,
       
-      // Set current values to be reasonable percentages of max
-      // Level 25: base 500 + 100*25 = 3000 max
-      currentHP: 3000,  // Max HP
-      currentSP: 3000,  // Max SP  
-      currentCP: 3000,  // Max CP
+      // Current values based on level 1
+      currentHP: 600,  // Level 1: 500 + 100*1 = 600
+      currentSP: 600,  // Level 1: 500 + 100*1 = 600
+      currentCP: 600,  // Level 1: 500 + 100*1 = 600
     ),
-    jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
-    itemIds: ['kunai', 'shuriken', 'health_potion'],
-    rank: PlayerRank.chunin, // Set to chunin to test village change functionality
+    jutsuIds: ['basic_punch'], // Only basic jutsu for new players
+    itemIds: ['kunai'], // Only basic items for new players
+    rank: PlayerRank.genin, // Start as genin
   ));
 
   Future<void> updateStats(PlayerStats newStats) async {

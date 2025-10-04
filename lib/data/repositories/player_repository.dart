@@ -26,27 +26,27 @@ class PlayerRepositoryImpl implements PlayerRepository {
       // Mock player data - in real implementation, this would fetch from server
       final player = Player(
         id: playerId,
-        name: 'Naruto_Uzumaki',
-        avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=N',
+        name: 'Guest Player',
+        avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=G',
         village: 'Willowshade Village',
-        ryo: 15000,
+        ryo: 500, // Minimal starting ryo
         stats: const PlayerStats(
-          level: 25,
-          str: 75000,
-          intl: 125000,
-          spd: 200000,
-          wil: 50000,
-          nin: 300000,
-          gen: 125000,
-          buk: 90000,
-          tai: 20000,
-          currentHP: 3000,
-          currentSP: 3000,
-          currentCP: 3000,
+          level: 1, // Start at level 1
+          str: 100,    // Minimal starting stats
+          intl: 100,
+          spd: 100,
+          wil: 100,
+          nin: 100,
+          gen: 100,
+          buk: 100,
+          tai: 100,
+          currentHP: 600,  // Level 1: 500 + 100*1 = 600
+          currentSP: 600,
+          currentCP: 600,
         ),
-        jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
-        itemIds: ['kunai', 'shuriken', 'health_potion'],
-        rank: PlayerRank.chunin,
+        jutsuIds: ['basic_punch'], // Only basic jutsu for new players
+        itemIds: ['kunai'], // Only basic items for new players
+        rank: PlayerRank.genin, // Start as genin
       );
       
       return (player: player, failure: null);

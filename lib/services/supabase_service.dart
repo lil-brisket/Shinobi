@@ -1,14 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
-import '../models/player.dart';
+import '../models/player.dart' as player_model;
 import '../models/stats.dart';
 import '../models/item.dart';
 import '../models/jutsu.dart';
 import '../models/equipment.dart';
-import '../models/battle_history.dart';
-import '../models/mission.dart';
-import '../models/banking.dart';
-import '../models/timer.dart';
 import '../models/village.dart';
 import '../data/failures.dart';
 
@@ -28,20 +24,33 @@ class SupabaseService {
     required String villageId,
   }) async {
     try {
+      print('Supabase signUp called with email: $email, username: $username, villageId: $villageId');
+      
       final response = await client.auth.signUp(
         email: email,
         password: password,
         data: {
           'username': username,
           'village_id': villageId,
+          'display_name': username, // Set display name in user metadata
         },
+        emailRedirectTo: null, // Disable email confirmation for development
       );
       
+      print('Supabase signUp response: user=${response.user?.id}, session=${response.session?.accessToken}, emailConfirmed=${response.user?.emailConfirmedAt}');
+      
       if (response.user != null) {
+        // Check if email confirmation is required
+        if (response.user!.emailConfirmedAt == null) {
+          print('Email confirmation required for user: ${response.user!.id}');
+          // For development, we'll still proceed with user creation
+          // In production, you might want to handle this differently
+        }
         return (userId: response.user!.id, error: null);
       }
       return (userId: null, error: 'Failed to create user');
     } catch (e) {
+      print('Supabase signUp error: $e');
       return (userId: null, error: e.toString());
     }
   }
@@ -72,7 +81,7 @@ class SupabaseService {
   User? get currentUser => client.auth.currentUser;
   
   // Player methods
-  Future<({Player? player, Failure? failure})> getPlayer(String playerId) async {
+  Future<({player_model.Player? player, Failure? failure})> getPlayer(String playerId) async {
     try {
       final response = await client
           .from(SupabaseConfig.playersTable)
@@ -83,14 +92,14 @@ class SupabaseService {
           .eq('id', playerId)
           .single();
       
-      final player = _mapPlayerFromJson(response);
+      final player = mapPlayerFromJson(response);
       return (player: player, failure: null);
     } catch (e) {
       return (player: null, failure: ServerFailure('Failed to fetch player: $e'));
     }
   }
   
-  Future<({Player? player, Failure? failure})> getPlayerByAuthId(String authUserId) async {
+  Future<({player_model.Player? player, Failure? failure})> getPlayerByAuthId(String authUserId) async {
     try {
       final response = await client
           .from(SupabaseConfig.playersTable)
@@ -101,26 +110,41 @@ class SupabaseService {
           .eq('auth_user_id', authUserId)
           .single();
       
-      final player = _mapPlayerFromJson(response);
+      final player = mapPlayerFromJson(response);
       return (player: player, failure: null);
     } catch (e) {
       return (player: null, failure: ServerFailure('Failed to fetch player: $e'));
     }
   }
   
-  Future<({Player? player, Failure? failure})> updatePlayer(Player player) async {
+  Future<({player_model.Player? player, Failure? failure})> updatePlayer(player_model.Player player) async {
     try {
       final response = await client
           .from(SupabaseConfig.playersTable)
-          .update(_mapPlayerToJson(player))
+          .update(mapPlayerToJson(player))
           .eq('id', player.id)
           .select()
           .single();
       
-      final updatedPlayer = _mapPlayerFromJson(response);
+      final updatedPlayer = mapPlayerFromJson(response);
       return (player: updatedPlayer, failure: null);
     } catch (e) {
       return (player: null, failure: ServerFailure('Failed to update player: $e'));
+    }
+  }
+
+  Future<({player_model.Player? player, Failure? failure})> createPlayer(player_model.Player player) async {
+    try {
+      final response = await client
+          .from(SupabaseConfig.playersTable)
+          .insert(mapPlayerToJson(player))
+          .select()
+          .single();
+      
+      final createdPlayer = mapPlayerFromJson(response);
+      return (player: createdPlayer, failure: null);
+    } catch (e) {
+      return (player: null, failure: ServerFailure('Failed to create player: $e'));
     }
   }
   
@@ -161,8 +185,6 @@ class SupabaseService {
         final jutsuData = jutsu['jutsus'] as Map<String, dynamic>;
         return _mapJutsuFromJson(jutsuData).copyWith(
           isEquipped: jutsu['is_equipped'],
-          masteryLevel: jutsu['mastery_level'],
-          masteryXp: jutsu['mastery_xp'],
         );
       }).toList();
       
@@ -186,93 +208,25 @@ class SupabaseService {
     }
   }
   
-  Future<({List<BattleHistory>? battles, Failure? failure})> getBattleHistory(String playerId, {int limit = 50}) async {
-    try {
-      final response = await client
-          .from(SupabaseConfig.battleHistoryTable)
-          .select('*')
-          .eq('player_id', playerId)
-          .order('created_at', ascending: false)
-          .limit(limit);
-      
-      final battles = response.map<BattleHistory>((battle) => _mapBattleHistoryFromJson(battle)).toList();
-      return (battles: battles, failure: null);
-    } catch (e) {
-      return (battles: null, failure: ServerFailure('Failed to fetch battle history: $e'));
-    }
-  }
+  // TODO: Implement battle history methods when models are properly defined
+  // Future<({List<battle_history.BattleHistory>? battles, Failure? failure})> getBattleHistory(String playerId, {int limit = 50}) async {
+  //   // Implementation pending
+  // }
   
-  Future<({bool success, Failure? failure})> addBattleHistory(BattleHistory battle) async {
-    try {
-      await client
-          .from(SupabaseConfig.battleHistoryTable)
-          .insert(_mapBattleHistoryToJson(battle));
-      
-      return (success: true, failure: null);
-    } catch (e) {
-      return (success: false, failure: ServerFailure('Failed to save battle history: $e'));
-    }
-  }
+  // TODO: Implement banking methods when models are properly defined
+  // Future<({List<banking.Banking>? accounts, Failure? failure})> getBankingAccounts(String playerId) async {
+  //   // Implementation pending
+  // }
   
-  // Banking methods
-  Future<({List<Banking>? accounts, Failure? failure})> getBankingAccounts(String playerId) async {
-    try {
-      final response = await client
-          .from(SupabaseConfig.bankingTable)
-          .select('*')
-          .eq('player_id', playerId);
-      
-      final accounts = response.map<Banking>((account) => _mapBankingFromJson(account)).toList();
-      return (accounts: accounts, failure: null);
-    } catch (e) {
-      return (accounts: null, failure: ServerFailure('Failed to fetch banking accounts: $e'));
-    }
-  }
-  
-  Future<({bool success, Failure? failure})> updateBankingAccount(Banking account) async {
-    try {
-      await client
-          .from(SupabaseConfig.bankingTable)
-          .upsert(_mapBankingToJson(account));
-      
-      return (success: true, failure: null);
-    } catch (e) {
-      return (success: false, failure: ServerFailure('Failed to update banking account: $e'));
-    }
-  }
-  
-  // Timer methods
-  Future<({List<Timer>? timers, Failure? failure})> getPlayerTimers(String playerId) async {
-    try {
-      final response = await client
-          .from(SupabaseConfig.timersTable)
-          .select('*')
-          .eq('player_id', playerId)
-          .eq('is_active', true);
-      
-      final timers = response.map<Timer>((timer) => _mapTimerFromJson(timer)).toList();
-      return (timers: timers, failure: null);
-    } catch (e) {
-      return (timers: null, failure: ServerFailure('Failed to fetch timers: $e'));
-    }
-  }
-  
-  Future<({bool success, Failure? failure})> addTimer(Timer timer) async {
-    try {
-      await client
-          .from(SupabaseConfig.timersTable)
-          .insert(_mapTimerToJson(timer));
-      
-      return (success: true, failure: null);
-    } catch (e) {
-      return (success: false, failure: ServerFailure('Failed to add timer: $e'));
-    }
-  }
+  // TODO: Implement timer methods when models are properly defined
+  // Future<({List<timer.Timer>? timers, Failure? failure})> getPlayerTimers(String playerId) async {
+  //   // Implementation pending
+  // }
   
   // Helper methods for mapping data
-  Player _mapPlayerFromJson(Map<String, dynamic> json) {
-    return Player(
-      id: json['id'],
+  player_model.Player mapPlayerFromJson(Map<String, dynamic> json) {
+    return player_model.Player(
+      id: json['id'], // Use the database-generated player ID
       name: json['username'],
       avatarUrl: json['avatar_url'] ?? '',
       village: json['villages']?['name'] ?? 'Unknown Village',
@@ -293,22 +247,25 @@ class SupabaseService {
       ),
       jutsuIds: [], // Will be loaded separately
       itemIds: [], // Will be loaded separately
-      rank: PlayerRank.values.firstWhere(
+      rank: player_model.PlayerRank.values.firstWhere(
         (rank) => rank.name == json['rank'],
-        orElse: () => PlayerRank.genin,
+        orElse: () => player_model.PlayerRank.genin,
       ),
-      medNinja: MedicalNinjaProfession(
+      medNinja: player_model.MedicalNinjaProfession(
         level: json['med_ninja_level'],
         xp: json['med_ninja_xp'],
       ),
     );
   }
   
-  Map<String, dynamic> _mapPlayerToJson(Player player) {
+  Map<String, dynamic> mapPlayerToJson(player_model.Player player) {
     return {
-      'id': player.id,
+      // Don't set 'id' - let the database generate it
+      'auth_user_id': player.id, // This should be the Supabase auth user ID
       'username': player.name,
+      'email': '', // Will be set from auth user data
       'avatar_url': player.avatarUrl,
+      'village_id': '550e8400-e29b-41d4-a716-446655440001', // Default to Willowshade Village
       'ryo': player.ryo,
       'level': player.stats.level,
       'str': player.stats.str,
@@ -377,88 +334,22 @@ class SupabaseService {
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      element: json['element'],
+      emblem: json['emblem'] ?? '🏘️',
+      tileX: json['tileX'] ?? 0,
+      tileY: json['tileY'] ?? 0,
     );
   }
   
-  BattleHistory _mapBattleHistoryFromJson(Map<String, dynamic> json) {
-    return BattleHistory(
-      id: json['id'],
-      playerId: json['player_id'],
-      opponentName: json['opponent_name'],
-      opponentType: json['opponent_type'],
-      result: json['result'],
-      damageDealt: json['damage_dealt'],
-      damageTaken: json['damage_taken'],
-      jutsusUsed: List<String>.from(json['jutsus_used'] ?? []),
-      ryoEarned: json['ryo_earned'],
-      xpEarned: json['xp_earned'],
-      battleDuration: json['battle_duration'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
-  }
+  // TODO: Implement mapping methods when models are properly defined
+  // battle_history.BattleHistory _mapBattleHistoryFromJson(Map<String, dynamic> json) {
+  //   // Implementation pending
+  // }
   
-  Map<String, dynamic> _mapBattleHistoryToJson(BattleHistory battle) {
-    return {
-      'id': battle.id,
-      'player_id': battle.playerId,
-      'opponent_name': battle.opponentName,
-      'opponent_type': battle.opponentType,
-      'result': battle.result,
-      'damage_dealt': battle.damageDealt,
-      'damage_taken': battle.damageTaken,
-      'jutsus_used': battle.jutsusUsed,
-      'ryo_earned': battle.ryoEarned,
-      'xp_earned': battle.xpEarned,
-      'battle_duration': battle.battleDuration,
-    };
-  }
+  // banking.Banking _mapBankingFromJson(Map<String, dynamic> json) {
+  //   // Implementation pending
+  // }
   
-  Banking _mapBankingFromJson(Map<String, dynamic> json) {
-    return Banking(
-      id: json['id'],
-      playerId: json['player_id'],
-      accountType: json['account_type'],
-      balance: json['balance'],
-      interestRate: (json['interest_rate'] as num).toDouble(),
-      lastInterest: DateTime.parse(json['last_interest']),
-    );
-  }
-  
-  Map<String, dynamic> _mapBankingToJson(Banking banking) {
-    return {
-      'id': banking.id,
-      'player_id': banking.playerId,
-      'account_type': banking.accountType,
-      'balance': banking.balance,
-      'interest_rate': banking.interestRate,
-      'last_interest': banking.lastInterest.toIso8601String(),
-    };
-  }
-  
-  Timer _mapTimerFromJson(Map<String, dynamic> json) {
-    return Timer(
-      id: json['id'],
-      playerId: json['player_id'],
-      timerType: json['timer_type'],
-      duration: json['duration'],
-      startedAt: DateTime.parse(json['started_at']),
-      expiresAt: DateTime.parse(json['expires_at']),
-      isActive: json['is_active'],
-      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
-    );
-  }
-  
-  Map<String, dynamic> _mapTimerToJson(Timer timer) {
-    return {
-      'id': timer.id,
-      'player_id': timer.playerId,
-      'timer_type': timer.timerType,
-      'duration': timer.duration,
-      'started_at': timer.startedAt.toIso8601String(),
-      'expires_at': timer.expiresAt.toIso8601String(),
-      'is_active': timer.isActive,
-      'metadata': timer.metadata,
-    };
-  }
+  // timer.Timer _mapTimerFromJson(Map<String, dynamic> json) {
+  //   // Implementation pending
+  // }
 }

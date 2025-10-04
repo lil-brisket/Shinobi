@@ -39,6 +39,8 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<({Player? player, String? error})> register(String username, String email, String password, String villageId) async {
     try {
+      print('Starting registration for username: $username, email: $email, villageId: $villageId');
+      
       // Create auth user
       final authResult = await _supabaseService.signUp(
         email: email,
@@ -47,25 +49,41 @@ class SupabaseAuthRepository implements AuthRepository {
         villageId: villageId,
       );
       
+      print('Auth result: userId=${authResult.userId}, error=${authResult.error}');
+      
       if (authResult.userId != null) {
-        // Create player record
+        // Create player record with proper email and village ID
         final player = _createNewPlayer(authResult.userId!, username, villageId);
         
-        // Save player to database
-        final saveResult = await _supabaseService.createPlayer(player);
+        // Update the player data with email and village ID before saving
+        final playerData = _supabaseService.mapPlayerToJson(player);
+        playerData['email'] = email;
+        playerData['village_id'] = villageId;
         
-        if (saveResult.player != null) {
-          // Add default items and jutsus
-          await _addDefaultPlayerData(saveResult.player!.id);
-          
-          return (player: saveResult.player as Player, error: null);
-        } else {
-          return (player: null, error: 'Failed to create player profile');
-        }
+        print('Using village ID: $villageId');
+        
+        print('Player data to insert: $playerData');
+        
+        // Save player to database using direct insert
+        final response = await _supabaseService.client
+            .from(SupabaseConfig.playersTable)
+            .insert(playerData)
+            .select()
+            .single();
+        
+        print('Player created successfully: $response');
+        
+        final createdPlayer = _supabaseService.mapPlayerFromJson(response);
+        
+        // Add default items and jutsus
+        await _addDefaultPlayerData(createdPlayer.id);
+        
+        return (player: createdPlayer as Player, error: null);
       }
       
       return (player: null, error: authResult.error ?? 'Registration failed');
     } catch (e) {
+      print('Registration error: $e');
       return (player: null, error: 'Registration failed: $e');
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/player.dart';
 import '../../models/stats.dart';
+import 'supabase_auth_repository.dart';
 
 /// Repository interface for authentication operations
 abstract class AuthRepository {
@@ -46,24 +47,24 @@ class AuthRepositoryImpl implements AuthRepository {
           name: username,
           avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
           village: 'Willowshade Village', // Default village
-          ryo: 15000,
+          ryo: 500, // Minimal starting ryo
           stats: const PlayerStats(
-            level: 25,
-            str: 75000,
-            intl: 125000,
-            spd: 200000,
-            wil: 50000,
-            nin: 300000,
-            gen: 125000,
-            buk: 90000,
-            tai: 20000,
-            currentHP: 3000,
-            currentSP: 3000,
-            currentCP: 3000,
+            level: 1, // Start at level 1
+            str: 100,    // Minimal starting stats
+            intl: 100,
+            spd: 100,
+            wil: 100,
+            nin: 100,
+            gen: 100,
+            buk: 100,
+            tai: 100,
+            currentHP: 600,  // Level 1: 500 + 100*1 = 600
+            currentSP: 600,
+            currentCP: 600,
           ),
-          jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
-          itemIds: ['kunai', 'shuriken', 'health_potion'],
-          rank: PlayerRank.chunin,
+          jutsuIds: ['basic_punch'], // Only basic jutsu for new players
+          itemIds: ['kunai'], // Only basic items for new players
+          rank: PlayerRank.genin, // Start as genin
         );
         
         return (player: player, error: null);
@@ -98,18 +99,18 @@ class AuthRepositoryImpl implements AuthRepository {
           name: username,
           avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
           village: 'Willowshade Village', // Default village
-          ryo: 10000, // Starting ryo for new players
+          ryo: 500, // Minimal starting ryo for new players
           stats: const PlayerStats(
             level: 1,
-            str: 1000,
-            intl: 1000,
-            spd: 1000,
-            wil: 1000,
-            nin: 1000,
-            gen: 1000,
-            buk: 1000,
-            tai: 1000,
-            currentHP: 600,
+            str: 100,    // Minimal starting stats
+            intl: 100,
+            spd: 100,
+            wil: 100,
+            nin: 100,
+            gen: 100,
+            buk: 100,
+            tai: 100,
+            currentHP: 600,  // Level 1: 500 + 100*1 = 600
             currentSP: 600,
             currentCP: 600,
           ),
@@ -203,24 +204,24 @@ class AuthRepositoryImpl implements AuthRepository {
           name: username,
           avatarUrl: 'https://via.placeholder.com/100x100/FF6B35/FFFFFF?text=${username[0].toUpperCase()}',
           village: 'Willowshade Village',
-          ryo: 15000,
+          ryo: 500, // Minimal starting ryo
           stats: const PlayerStats(
-            level: 25,
-            str: 75000,
-            intl: 125000,
-            spd: 200000,
-            wil: 50000,
-            nin: 300000,
-            gen: 125000,
-            buk: 90000,
-            tai: 20000,
-            currentHP: 3000,
-            currentSP: 3000,
-            currentCP: 3000,
+            level: 1, // Start at level 1
+            str: 100,    // Minimal starting stats
+            intl: 100,
+            spd: 100,
+            wil: 100,
+            nin: 100,
+            gen: 100,
+            buk: 100,
+            tai: 100,
+            currentHP: 600,  // Level 1: 500 + 100*1 = 600
+            currentSP: 600,
+            currentCP: 600,
           ),
-          jutsuIds: ['rasengan', 'shadow_clone', 'wind_style'],
-          itemIds: ['kunai', 'shuriken', 'health_potion'],
-          rank: PlayerRank.chunin,
+          jutsuIds: ['basic_punch'], // Only basic jutsu for new players
+          itemIds: ['kunai'], // Only basic items for new players
+          rank: PlayerRank.genin, // Start as genin
         );
       }
       return null;
@@ -244,5 +245,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
 /// Provider for AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl();
+  // Use Supabase implementation instead of mock implementation
+  return SupabaseAuthRepository();
 });

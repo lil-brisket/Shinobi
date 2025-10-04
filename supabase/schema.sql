@@ -305,3 +305,23 @@ $$ language 'plpgsql';
 -- Add clan member count triggers
 CREATE TRIGGER update_clan_member_count_insert AFTER INSERT ON clan_members FOR EACH ROW EXECUTE FUNCTION update_clan_member_count();
 CREATE TRIGGER update_clan_member_count_delete AFTER DELETE ON clan_members FOR EACH ROW EXECUTE FUNCTION update_clan_member_count();
+
+-- Function to automatically set display name from user metadata
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Set display name from user metadata if available
+    IF NEW.raw_user_meta_data->>'display_name' IS NOT NULL THEN
+        NEW.raw_user_meta_data = NEW.raw_user_meta_data || jsonb_build_object('display_name', NEW.raw_user_meta_data->>'display_name');
+    ELSIF NEW.raw_user_meta_data->>'username' IS NOT NULL THEN
+        NEW.raw_user_meta_data = NEW.raw_user_meta_data || jsonb_build_object('display_name', NEW.raw_user_meta_data->>'username');
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql' SECURITY DEFINER;
+
+-- Trigger to automatically set display name on user creation
+CREATE TRIGGER on_auth_user_created
+    BEFORE INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION handle_new_user();
